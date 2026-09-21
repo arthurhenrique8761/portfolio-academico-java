@@ -4,13 +4,24 @@ import java.util.List;
 import java.util.ArrayList;
 
 import model.Projeto;
+import dao.*;
 
 // regras de negócio
 public class ProjetoService {
     private List<Projeto> projetos;
+    private ProjetoCSV dao;
 
     public ProjetoService() {
         projetos = new ArrayList<>();
+        dao = new ProjetoCSV();
+    }
+
+    public void carregar() throws Exception {
+        projetos = dao.listar();
+    }
+
+    public void salvar() throws Exception {
+        dao.salvar(projetos);
     }
 
     public boolean adicionar(Projeto projeto) {
@@ -33,6 +44,7 @@ public class ProjetoService {
         List<Projeto> resultado = projetos.stream().toList();
         return resultado;
     }
+    
 
     // buscas
     public Projeto buscaPorId(int id) {
