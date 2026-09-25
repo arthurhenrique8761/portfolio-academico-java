@@ -11,19 +11,18 @@ public class ProjetoCSV {
     private Path caminho;
 
     public ProjetoCSV() {
-        caminho = Path.of("dados/projetos.csv");
+        caminho = Path.of("data/projetos.csv");
     }
 
     public void salvar(List<Projeto> projetos) throws Exception {
         List<String> linhas = new ArrayList<>();
         linhas.add("id;nome;descricao;categoria;status");
         for (Projeto projeto : projetos) {
-            String linha = 
-            projeto.getId() + ";" +
-            projeto.getNome() + ";" +
-            projeto.getDescricao() + ";" +
-            projeto.getCategoria() + ";" +
-            projeto.getStatus();
+            String linha = projeto.getId() + ";" +
+                    projeto.getNome() + ";" +
+                    projeto.getDescricao() + ";" +
+                    projeto.getCategoria() + ";" +
+                    projeto.getStatus();
 
             linhas.add(linha);
         }
@@ -39,7 +38,7 @@ public class ProjetoCSV {
 
         List<String> linhas = Files.readAllLines(caminho);
 
-        for (int i=1; i<linhas.size(); i++) {
+        for (int i = 1; i < linhas.size(); i++) {
             String linha = linhas.get(i);
             String[] dados = linha.split(";");
 
