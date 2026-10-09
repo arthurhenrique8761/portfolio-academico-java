@@ -3,95 +3,161 @@ package view;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
+import model.Projeto;
+import service.ProjetoService;
+
 public class TelaPrincipal extends JFrame {
 
-    private JLabel labelNome;
-    private JTextField campoNome;
+    private ProjetoService service;
 
-    private JLabel labelDescricao;
+    // campos de texto
+    private JTextField campoNome;
     private JTextField campoDescricao;
 
-    private JLabel labelCategoria;
-    private JTextField campoCategoria;
+    // tabela de opções
+    private JComboBox<String> comboCategoria;
+    private JComboBox<String> comboStatus;
 
-    private JTable tabela;
+    // tabela
     private DefaultTableModel modelo;
+    private JTable tabela;
 
     // botões
     private JButton botaoCadastrar;
-    private JButton botaoMostrar;
+    private JButton botaoLimpar;
 
-    public TelaPrincipal() {
+    public TelaPrincipal() throws Exception {
         // configurações da janela
         setTitle("Sistema de Projetos");
         setSize(800, 500);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // componentes da janela
-        labelNome = new JLabel("Nome: ");
+        // chamada dos métodos criam os elementos da janela (modularização de tarefas)
+
+        service = new ProjetoService();
+
+        criarComponentes();
+        criarEventos();
+
+        service.carregar();
+        carregarTabela();
+    }
+
+    public void criarComponentes() {
+
+        // definição e instanciação dos elementos da janela
         campoNome = new JTextField(30);
 
-        labelDescricao = new JLabel("Descrição: ");
         campoDescricao = new JTextField(30);
 
-        labelCategoria = new JLabel("Categoria: ");
-        campoCategoria = new JTextField(30);
+        comboCategoria = new JComboBox<>();
+        comboCategoria.addItem("Web");
+        comboCategoria.addItem("Software");
+        comboCategoria.addItem("Mobile");
+        comboCategoria.addItem("Outro");
 
-        botaoMostrar = new JButton("Mostrar");
-        botaoMostrar.addActionListener(e -> {
-            String nome = campoNome.getText();
-            String descricao = campoDescricao.getText();
-            String categoria = campoCategoria.getText();
+        comboStatus = new JComboBox<>();
+        comboStatus.addItem("Planejado");
+        comboStatus.addItem("Em desenvolvimento");
+        comboStatus.addItem("Concluído");
 
-            System.out.printf("Projeto cadastrado\nNome: %s\nDescrição: %s\nCategoria: %s\n\n", nome, descricao,
-                    categoria);
-        });
+        botaoCadastrar = new JButton("Cadastrar");
+        botaoLimpar = new JButton("Limpar");
 
-        // tabela
         modelo = new DefaultTableModel();
-
         modelo.addColumn("ID");
         modelo.addColumn("Nome");
         modelo.addColumn("Categoria");
-        modelo.addColumn("Descrição: ");
-        modelo.addColumn("Status: ");
+        modelo.addColumn("Status");
         tabela = new JTable(modelo);
 
-        modelo.addRow(new Object[] {
-                1,
-                "Sistema academico",
-                "Software",
-                "Em desenvolvimento"
-        });
+        // instanciação da janela e inserção dos componentes (em ordem)
+        JPanel painelFormulario = new JPanel();
 
-        // botaoCadastrar = new JButton("Cadastrar");
-        // botaoCadastrar.addActionListener(e -> {
-        // String nome = campoNome.getText();
-        // System.out.println("Projeto: " + nome);
-        // });
+        painelFormulario.add(new JLabel("Nome: "));
+        painelFormulario.add(campoNome);
 
-        // criaçao do painel da janela e inserção de elementos nele (em ordem de
-        // exibição)
-        JPanel painel = new JPanel();
+        painelFormulario.add(new JLabel("Descrição: "));
+        painelFormulario.add(campoDescricao);
 
-        painel.add(labelNome);
-        painel.add(campoNome);
+        painelFormulario.add(new JLabel("Categoria: "));
+        painelFormulario.add(comboCategoria);
 
-        painel.add(labelDescricao);
-        painel.add(campoDescricao);
+        painelFormulario.add(new JLabel("Status: "));
+        painelFormulario.add(comboStatus);
 
-        painel.add(labelCategoria);
-        painel.add(campoCategoria);
+        painelFormulario.add(botaoCadastrar);
+        painelFormulario.add(botaoLimpar);
 
-        painel.add(botaoMostrar);
-        // painel.add(botaoCadastrar);
+        setLayout(new BoxLayout(
+                getContentPane(),
+                BoxLayout.Y_AXIS));
 
-        // adição do painel à janela/frame
-        add(painel);
+        add(painelFormulario);
+        add(new JScrollPane(tabela));
     }
 
-    public static void main(String[] args) {
+    public void criarEventos() {
+        botaoCadastrar.addActionListener(e -> {
+            try {
+                cadastrar();
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(this, "Erro: " + e1.getMessage());
+            }
+        });
+
+        botaoLimpar.addActionListener(e -> limparFormulário());
+    }
+
+    public void limparFormulário() {
+        campoNome.setText("");
+        campoDescricao.setText("");
+        comboCategoria.setSelectedIndex(0);
+        comboStatus.setSelectedIndex(0);
+        campoNome.requestFocus();
+    }
+
+    public void cadastrar() throws Exception {
+        String nome = campoNome.getText();
+        String descricao = campoDescricao.getText();
+        String categoria = comboCategoria.getSelectedItem().toString();
+        String status = comboStatus.getSelectedItem().toString();
+
+        if (nome.isBlank()) {
+            JOptionPane.showMessageDialog(this, "Informe o nome do projeto");
+            return;
+        }
+
+        Projeto projeto = new Projeto(nome, descricao, categoria, status);
+
+        service.adicionar(projeto);
+
+        service.salvar();
+
+        JOptionPane.showMessageDialog(this, "Projeto Cadastrado: " + nome);
+
+        carregarTabela();
+        limparFormulário();
+    }
+
+    public void carregarTabela() {
+        modelo.setRowCount(0);
+
+        for (Projeto projeto : service.listar()) {
+            modelo.addRow(new Object[] {
+                    projeto.getId(),
+                    projeto.getNome(),
+                    projeto.getCategoria(),
+                    projeto.getStatus()
+            });
+        }
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        // TO DO
+        // Tabela não carregando dados atuais ao iniciar
         TelaPrincipal tela = new TelaPrincipal();
         tela.setVisible(true);
     }
