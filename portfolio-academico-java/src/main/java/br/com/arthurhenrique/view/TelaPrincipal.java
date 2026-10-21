@@ -1,10 +1,10 @@
-package view;
+package br.com.arthurhenrique.view;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
-import model.Projeto;
-import service.ProjetoService;
+import br.com.arthurhenrique.model.Projeto;
+import br.com.arthurhenrique.service.ProjetoService;
 
 public class TelaPrincipal extends JFrame {
 

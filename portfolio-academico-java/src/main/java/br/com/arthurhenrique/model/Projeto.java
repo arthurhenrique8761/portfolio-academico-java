@@ -1,4 +1,4 @@
-package model;
+package br.com.arthurhenrique.model;
 
 import java.util.Random;
 
@@ -18,17 +18,17 @@ public class Projeto {
         this.descricao = descricao;
         this.categoria = categoria;
         this.status = status;
-    }   
+    }
 
     public Projeto(String nome, String descricao, String categoria, String status) {
         Random random = new Random();
-        
-        id = random.nextInt(89)+10;
+
+        id = random.nextInt(89) + 10;
         this.nome = nome;
         this.descricao = descricao;
         this.categoria = categoria;
         this.status = status;
-    }   
+    }
 
     public void exibirDados() {
         System.out.println("ID: " + id);
@@ -77,6 +77,10 @@ public class Projeto {
 
     public void setStatus(String status) {
         this.status = status;
-    }   
+    }
+
+    public String toString() {
+        return String.format("ID: %d\nNome: %s\nDescrição: %s\nCategoria: %s\nStatus: %s");
+    }
 
 }

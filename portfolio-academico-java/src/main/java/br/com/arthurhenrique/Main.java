@@ -1,8 +1,9 @@
+package br.com.arthurhenrique;
+
 import java.util.Scanner;
 
-import java.util.List;
-import model.Projeto;
-import service.ProjetoService;
+import br.com.arthurhenrique.model.Projeto;
+import br.com.arthurhenrique.service.ProjetoService;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -70,10 +71,8 @@ public class Main {
                     if (cadastrado) {
                         projetoService.salvar();
                         System.out.println("\nProjeto cadastrado com sucesso");
-                        break;
                     } else {
                         System.out.println("\nNão foi possível cadastrar");
-                        break;
                     }
                 case 4:
                     System.out.println("=== ATUALIZAR PROJETO ===");
@@ -110,7 +109,6 @@ public class Main {
                     if (alterado) {
                         projetoService.salvar();
                         System.out.printf("\nProjeto %d alterado com sucesso\n", idAlterar);
-                        break;
                     } else {
                         System.out.println("\nNão foi possível alterar o projeto");
                     }
@@ -143,10 +141,9 @@ public class Main {
                             break;
                         }
                     }
-                    break;
                 case 6:
                     System.out.println("=== BUSCA POR CATEGORIA ===");
-                    
+
                     System.out.print("Digite a categoria: ");
                     String buscaCategoria = sc.next();
 
@@ -166,7 +163,6 @@ public class Main {
                     for (Projeto projetoStatus : projetoService.buscarPorStatus(statusBusca)) {
                         projetoStatus.exibirDados();
                     }
-                    break;
                 case 0:
                     System.out.println("Encerrando programa...");
                     sc.close();

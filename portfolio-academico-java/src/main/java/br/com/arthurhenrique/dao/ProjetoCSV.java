@@ -1,22 +1,26 @@
-package dao;
+package br.com.arthurhenrique.dao;
 
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.ArrayList;
 
-import model.Projeto;
+import br.com.arthurhenrique.model.Projeto;
 
 public class ProjetoCSV {
     private Path caminho;
 
     public ProjetoCSV() {
-        caminho = Path.of("data/projetos.csv");
+        caminho = Path.of("portfolio-academico-java/data/projetos.csv");
     }
 
     public void salvar(List<Projeto> projetos) throws Exception {
         List<String> linhas = new ArrayList<>();
+
+        // o cabeçalho não faz diferença pro desktop mas é util para a api converter em
+        // json
         linhas.add("id;nome;descricao;categoria;status");
+
         for (Projeto projeto : projetos) {
             String linha = projeto.getId() + ";" +
                     projeto.getNome() + ";" +
