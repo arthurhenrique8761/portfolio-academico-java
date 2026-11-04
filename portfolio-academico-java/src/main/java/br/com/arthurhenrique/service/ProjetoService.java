@@ -30,7 +30,6 @@ public class ProjetoService {
             return false;
         }
         if (existente != null) {
-            System.out.println("Erro: Projeto já existente");
             return false;
         } else {
             projetos.add(projeto);
@@ -91,5 +90,15 @@ public class ProjetoService {
         projeto.setStatus(projetoAtualizado.getStatus());
 
         return true;
+    }
+
+    public int gerarId() {
+        int greatest = 0;
+        for (Projeto projeto : projetos) {
+            if (projeto.getId() >= greatest) {
+                greatest = projeto.getId();
+            }
+        }
+        return greatest + 1;
     }
 }
