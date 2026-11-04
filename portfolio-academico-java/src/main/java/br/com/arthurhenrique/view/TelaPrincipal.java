@@ -6,6 +6,9 @@ import javax.swing.table.DefaultTableModel;
 import br.com.arthurhenrique.model.Projeto;
 import br.com.arthurhenrique.service.ProjetoService;
 
+// TO DO
+// Add: função de alterar
+
 public class TelaPrincipal extends JFrame {
 
     private ProjetoService service;
@@ -25,6 +28,8 @@ public class TelaPrincipal extends JFrame {
     // botões
     private JButton botaoCadastrar;
     private JButton botaoLimpar;
+    private JButton botaoExcluir;
+    private JButton botaoAlterar;
 
     public TelaPrincipal() throws Exception {
         // configurações da janela
@@ -64,6 +69,8 @@ public class TelaPrincipal extends JFrame {
 
         botaoCadastrar = new JButton("Cadastrar");
         botaoLimpar = new JButton("Limpar");
+        botaoExcluir = new JButton("Exclur");
+        botaoAlterar = new JButton("Alterar");
 
         modelo = new DefaultTableModel();
         modelo.addColumn("ID");
@@ -89,6 +96,7 @@ public class TelaPrincipal extends JFrame {
 
         painelFormulario.add(botaoCadastrar);
         painelFormulario.add(botaoLimpar);
+        painelFormulario.add(botaoExcluir);
 
         setLayout(new BoxLayout(
                 getContentPane(),
@@ -108,6 +116,9 @@ public class TelaPrincipal extends JFrame {
         });
 
         botaoLimpar.addActionListener(e -> limparFormulário());
+
+        botaoExcluir.addActionListener(e -> excluirProjeto());
+
     }
 
     public void limparFormulário() {
@@ -119,6 +130,7 @@ public class TelaPrincipal extends JFrame {
     }
 
     public void cadastrar() throws Exception {
+        int id = service.gerarId();
         String nome = campoNome.getText();
         String descricao = campoDescricao.getText();
         String categoria = comboCategoria.getSelectedItem().toString();
@@ -129,7 +141,7 @@ public class TelaPrincipal extends JFrame {
             return;
         }
 
-        Projeto projeto = new Projeto(nome, descricao, categoria, status);
+        Projeto projeto = new Projeto(id, nome, descricao, categoria, status);
 
         service.adicionar(projeto);
 
@@ -139,6 +151,36 @@ public class TelaPrincipal extends JFrame {
 
         carregarTabela();
         limparFormulário();
+    }
+
+    public void excluirProjeto() {
+        int linhaSelecionada = tabela.getSelectedRow();
+
+        if (linhaSelecionada != -1) {
+            int option = JOptionPane.showConfirmDialog(this, "Um projeto será deletado.\nEstá certo disso?",
+                    "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+            if (option == 0) {
+                boolean excluir = service.removerPorId(linhaSelecionada + 1);
+                if (excluir) {
+                    try {
+                        service.salvar();
+                        int linhaExcluida = tabela.convertRowIndexToModel(linhaSelecionada);
+                        modelo.removeRow(linhaExcluida);
+                        JOptionPane.showMessageDialog(null, "Projeto excluido com sucesso", "Sucesso",
+                                JOptionPane.PLAIN_MESSAGE);
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(null, "Erro ao salvar no disco", "Erro",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Não fo possivel excluir o projeto");
+                }
+
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Por favor, selecione um projeto", "Aviso",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     public void carregarTabela() {
