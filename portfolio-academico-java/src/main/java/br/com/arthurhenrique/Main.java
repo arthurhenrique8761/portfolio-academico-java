@@ -1,5 +1,7 @@
 package br.com.arthurhenrique;
 
+import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
 
 import br.com.arthurhenrique.model.Projeto;
@@ -8,8 +10,7 @@ import br.com.arthurhenrique.service.ProjetoService;
 public class Main {
     public static void main(String[] args) throws Exception {
         // TO DO:
-        // Fix: Busca por categoria e status
-        // Add: Confirmação antes de alterar; Contador
+        // Fix: Busca por status não funciona com "concluído" e "em desenvolvimento"
 
         Scanner sc = new Scanner(System.in);
 
@@ -19,23 +20,30 @@ public class Main {
         int opcao = -1;
 
         do {
-            System.out.println("==========================\n   SISTEMA DE PROJETOS   \n==========================");
+            try {
+                System.out.println("==========================\n   SISTEMA DE PROJETOS   \n==========================");
 
-            System.out.println(
-                    "1 - Listar\n2 - Buscar projeto\n3 - Cadastrar projeto\n4 - Alterar status\n5 - Excluir projeto\n6 - Busca por categoria\n7 - Busca por status\n0 - Sair\n");
-            System.out.print("Escolha: ");
-            opcao = sc.nextInt();
+                System.out.println("\nTotal de projetos: " + projetoService.listar().size());
 
-            System.out.println();
+                System.out.println(
+                        "1 - Listar\n2 - Buscar projeto\n3 - Cadastrar projeto\n4 - Alterar status\n5 - Excluir projeto\n6 - Busca por categoria\n7 - Busca por status\n0 - Sair\n");
+                System.out.print("Escolha: ");
+                opcao = sc.nextInt();
 
+                System.out.println();
+            } catch (InputMismatchException e) {
+                System.out.println("Erro: Insira apenas números, seu arrombado");
+                sc.nextLine();
+                continue;
+            }
             switch (opcao) {
-                case 1:
+                case 1 -> {
                     System.out.println("=== LISTA DE PROJETOS ===");
                     for (Projeto projeto : projetoService.listar()) {
                         projeto.exibirDados();
                     }
-                    break;
-                case 2:
+                }
+                case 2 -> {
                     System.out.println("=== BUSCAR POR ID ===");
                     System.out.print("Digite o ID: ");
                     int idBusca = sc.nextInt();
@@ -45,16 +53,15 @@ public class Main {
                     } else {
                         System.out.println("\nProjeto nao encontrado");
                     }
-                    break;
-                case 3:
+                }
+                case 3 -> {
                     System.out.println("=== CADASTRAR PROJETO ===");
-                    System.out.print("ID: ");
-                    int id = sc.nextInt();
 
-                    sc.nextLine();
+                    int id = projetoService.gerarId();
 
                     System.out.print("Nome: ");
-                    String nome = sc.nextLine();
+                    String nome = sc.next();
+                    sc.nextLine();
 
                     System.out.print("Descrição: ");
                     String descricao = sc.nextLine();
@@ -74,7 +81,8 @@ public class Main {
                     } else {
                         System.out.println("\nNão foi possível cadastrar");
                     }
-                case 4:
+                }
+                case 4 -> {
                     System.out.println("=== ATUALIZAR PROJETO ===");
                     System.out.print("Digite o ID do projeto: ");
                     int idAlterar = sc.nextInt();
@@ -113,8 +121,8 @@ public class Main {
                         System.out.println("\nNão foi possível alterar o projeto");
                     }
 
-                    break;
-                case 5:
+                }
+                case 5 -> {
                     System.out.println("=== REMOVER PROJETO ===");
                     System.out.print("Digite o ID do projeto: ");
                     int idRemover = sc.nextInt();
@@ -141,35 +149,56 @@ public class Main {
                             break;
                         }
                     }
-                case 6:
+                }
+                case 6 -> {
                     System.out.println("=== BUSCA POR CATEGORIA ===");
 
                     System.out.print("Digite a categoria: ");
                     String buscaCategoria = sc.next();
 
+                    List<Projeto> categoriaList = projetoService.buscarPorCategoria(buscaCategoria);
                     System.out.println();
 
-                    for (Projeto projetoCategoria : projetoService.buscarPorCategoria(buscaCategoria)) {
-                        projetoCategoria.exibirDados();
+                    // checa se a lista está vazia; volta um booleano
+                    if (categoriaList.isEmpty()) {
+                        System.out.println("Nenhum projeto encontrado");
+                        break;
                     }
-                    break;
-                case 7:
+
+                    System.out.println("lista não vazia");
+                    for (Projeto projeto : categoriaList) {
+                        projeto.exibirDados();
+                    }
+
+                }
+                case 7 -> {
                     System.out.println("=== BUSCA POR STATUS ===");
-                    System.out.print("Digite o status: ");
-                    String statusBusca = sc.next();
 
+                    System.out.print("Digite o status (Concluído, Em Desenvolvimento, Planejado): ");
+                    String buscaStatus = sc.next();
+
+                    List<Projeto> statusList = projetoService.buscarPorStatus(buscaStatus);
                     System.out.println();
 
-                    for (Projeto projetoStatus : projetoService.buscarPorStatus(statusBusca)) {
-                        projetoStatus.exibirDados();
+                    // checa se a lista está vazia; volta um booleano
+                    if (statusList.isEmpty()) {
+                        System.out.println("Nenhum projeto encontrado");
+                        sc.nextLine();
+                        break;
                     }
-                case 0:
+
+                    for (Projeto projeto : statusList) {
+                        projeto.exibirDados();
+                    }
+                }
+                case 0 -> {
                     System.out.println("Encerrando programa...");
                     sc.close();
                     System.exit(0);
+                }
             }
 
-        } while (opcao != -1);
+        } while (true);
 
     }
 }
