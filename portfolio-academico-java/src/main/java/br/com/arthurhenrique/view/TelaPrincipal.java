@@ -7,7 +7,7 @@ import br.com.arthurhenrique.model.Projeto;
 import br.com.arthurhenrique.service.ProjetoService;
 
 // TO DO
-// Add: função de alterar
+//
 
 public class TelaPrincipal extends JFrame {
 
@@ -42,6 +42,11 @@ public class TelaPrincipal extends JFrame {
 
         service = new ProjetoService();
 
+        /*
+         * os metodos estão sem nome pois como a classe atual herda de JFrame, os
+         * métodos do JFrame passam a ser
+         * dessa classe, sem a necessidade de instânciar um objeto JFrame
+         */
         criarComponentes();
         criarEventos();
 
@@ -97,6 +102,7 @@ public class TelaPrincipal extends JFrame {
         painelFormulario.add(botaoCadastrar);
         painelFormulario.add(botaoLimpar);
         painelFormulario.add(botaoExcluir);
+        painelFormulario.add(botaoAlterar);
 
         setLayout(new BoxLayout(
                 getContentPane(),
@@ -119,6 +125,7 @@ public class TelaPrincipal extends JFrame {
 
         botaoExcluir.addActionListener(e -> excluirProjeto());
 
+        botaoAlterar.addActionListener(e -> alterarProjeto());
     }
 
     public void limparFormulário() {
@@ -158,14 +165,13 @@ public class TelaPrincipal extends JFrame {
 
         if (linhaSelecionada != -1) {
             int option = JOptionPane.showConfirmDialog(this, "Um projeto será deletado.\nEstá certo disso?",
-                    "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE);
+                    "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (option == 0) {
                 boolean excluir = service.removerPorId(linhaSelecionada + 1);
                 if (excluir) {
                     try {
                         service.salvar();
-                        int linhaExcluida = tabela.convertRowIndexToModel(linhaSelecionada);
-                        modelo.removeRow(linhaExcluida);
+                        carregarTabela();
                         JOptionPane.showMessageDialog(null, "Projeto excluido com sucesso", "Sucesso",
                                 JOptionPane.PLAIN_MESSAGE);
                     } catch (Exception e1) {
@@ -173,13 +179,65 @@ public class TelaPrincipal extends JFrame {
                                 JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
-                    JOptionPane.showMessageDialog(null, "Não fo possivel excluir o projeto");
+                    JOptionPane.showMessageDialog(null, "Não foi possivel excluir o projeto", "Erro",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
-
             }
         } else {
             JOptionPane.showMessageDialog(this, "Por favor, selecione um projeto", "Aviso",
                     JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+    }
+
+    public void alterarProjeto() {
+        /*
+         * selecionar um preencher os dados no formulario e perguntar se deve alterar.
+         * o programa deve reconhecer se há algum projeto selecionado e, ao clicar em
+         * alterar, perguntar se tem certeza
+         */
+
+        int linhaSelecionada = tabela.getSelectedRow();
+
+        if (linhaSelecionada != -1) {
+            try {
+                int id = linhaSelecionada + 1;
+                String nome = campoNome.getText();
+                String descricao = campoDescricao.getText();
+                String categoria = comboCategoria.getSelectedItem().toString();
+                String status = comboStatus.getSelectedItem().toString();
+
+                if (nome.isBlank()) {
+                    JOptionPane.showMessageDialog(this, "Informe o nome do projeto");
+                    return;
+                }
+
+                int option = JOptionPane.showConfirmDialog(this, "Um projeto será alterado.\nEstá certo disso?",
+                        "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+                if (option == 0) {
+                    Projeto projetoAtualizado = new Projeto(id, nome, descricao, categoria, status);
+
+                    service.alterar(projetoAtualizado);
+                    service.salvar();
+                    carregarTabela();
+
+                    carregarTabela();
+
+                    JOptionPane.showMessageDialog(this, "Projeto alterado com sucesso", "Sucesso",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    return;
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Não foi possivel alterar o projeto");
+                return;
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Por favor, selecione um projeto", "Aviso",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
         }
     }
 
@@ -198,8 +256,6 @@ public class TelaPrincipal extends JFrame {
     }
 
     public static void main(String[] args) throws Exception {
-        // TO DO
-        // Tabela não carregando dados atuais ao iniciar
         TelaPrincipal tela = new TelaPrincipal();
         tela.setVisible(true);
     }
