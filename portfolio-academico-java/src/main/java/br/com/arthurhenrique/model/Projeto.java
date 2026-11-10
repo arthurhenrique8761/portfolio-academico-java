@@ -1,7 +1,5 @@
 package br.com.arthurhenrique.model;
 
-import java.util.Random;
-
 public class Projeto {
     private int id;
     private String nome;
@@ -20,15 +18,18 @@ public class Projeto {
         this.status = status;
     }
 
-    public Projeto(String nome, String descricao, String categoria, String status) {
-        Random random = new Random();
-
-        id = random.nextInt(89) + 10;
-        this.nome = nome;
-        this.descricao = descricao;
-        this.categoria = categoria;
-        this.status = status;
-    }
+    /*
+     * public Projeto(String nome, String descricao, String categoria, String
+     * status) {
+     * Random random = new Random();
+     * 
+     * id = random.nextInt(89) + 10;
+     * this.nome = nome;
+     * this.descricao = descricao;
+     * this.categoria = categoria;
+     * this.status = status;
+     * }
+     */
 
     public void exibirDados() {
         System.out.println("ID: " + id);
