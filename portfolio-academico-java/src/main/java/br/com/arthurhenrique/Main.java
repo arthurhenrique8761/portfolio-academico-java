@@ -32,7 +32,7 @@ public class Main {
 
                 System.out.println();
             } catch (InputMismatchException e) {
-                System.out.println("Erro: Insira apenas números, seu arrombado");
+                System.out.println("Erro: Insira apenas números");
                 sc.nextLine();
                 continue;
             }
