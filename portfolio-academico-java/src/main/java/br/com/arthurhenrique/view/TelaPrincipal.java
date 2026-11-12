@@ -1,5 +1,7 @@
 package br.com.arthurhenrique.view;
 
+import java.util.List;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -166,12 +168,13 @@ public class TelaPrincipal extends JFrame {
     public void excluirProjeto() {
         try {
             int linhaSelecionada = tabela.getSelectedRow();
+            int id = linhaSelecionada + 1;
 
             if (linhaSelecionada != -1) {
                 int option = JOptionPane.showConfirmDialog(this, "Um projeto será deletado.\nEstá certo disso?",
                         "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
                 if (option == 0) {
-                    apiClient.excluirProjeto(option);
+                    apiClient.excluirProjeto(id);
                     JOptionPane.showMessageDialog(null, "Projeto excluido com sucesso", "Sucesso",
                             JOptionPane.PLAIN_MESSAGE);
 
@@ -217,9 +220,7 @@ public class TelaPrincipal extends JFrame {
                 if (option == 0) {
                     Projeto projetoAtualizado = new Projeto(id, nome, descricao, categoria, status);
 
-                    service.alterar(projetoAtualizado);
-
-                    service.salvar();
+                    apiClient.alterarProjeto(id, projetoAtualizado);
                     carregarTabela();
 
                     JOptionPane.showMessageDialog(this, "Projeto alterado com sucesso", "Sucesso",
@@ -239,20 +240,42 @@ public class TelaPrincipal extends JFrame {
     }
 
     public void carregarTabela() throws Exception {
-        modelo.setRowCount(0);
+        new SwingWorker<List<Projeto>, Void>() {
+            @Override
+            protected List<Projeto> doInBackground() throws Exception {
+                return apiClient.listarProjetos();
+            }
 
-        for (Projeto projeto : apiClient.listarProjetos()) {
-            modelo.addRow(new Object[] {
-                    projeto.getId(),
-                    projeto.getNome(),
-                    projeto.getCategoria(),
-                    projeto.getStatus()
-            });
-        }
+            @Override
+            protected void done() {
+                try {
+                    atualizarTabela(get());
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(TelaPrincipal.this, "Erro ao carregar: " + e.getMessage(), "Erro",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+        }.execute();
 
     }
 
+    public void atualizarTabela(List<Projeto> projetos) {
+        modelo.setRowCount(0);
+
+        for (Projeto projeto : projetos) {
+            modelo.addRow(
+                    new Object[] {
+                            projeto.getId(),
+                            projeto.getNome(),
+                            projeto.getCategoria(),
+                            projeto.getStatus()
+                    });
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        Api.main(args);
         TelaPrincipal tela = new TelaPrincipal();
         tela.setVisible(true);
     }
