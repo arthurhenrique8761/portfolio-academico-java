@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Projetos</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Sistema de Projetos</h1>
+        <p>Gerenciamento de projetos e portfólio</p>
+    </header>
+
+    <main>
+
+        <section>
+            <h2>Cadastrar projeto</h2>
+            <form id="formProjeto">
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" required>
+
+                <label for="descricao">Descrição:</label>
+                <textarea id="descricao" required></textarea>
+
+                <label for="categoria">Categoria:</label>
+                <input type="text" id="categoria" required>
+
+                <label for="status">Status:</label>
+                <select id="status">
+                    <option value="Planejado">Planejado</option>
+                    <option value="Em desenvolvimento">Em desenvolvimento</option>
+                    <option value="Concluído">Concluído</option>
+                </select>
+
+                <button type="submit">Cadastrar projeto</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Projetos cadastrados</h2>
+            <p id="mensagem"></p>
+            <div id="listaProjetos"></div>
+        </section>
+
+    </main>
+
+    <script src="./js/projetos.js"></script>
+</body>
+
+</html>
