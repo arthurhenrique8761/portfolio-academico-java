@@ -13,9 +13,12 @@ public class Api {
         service.carregar();
 
         var app = Javalin.create(config -> {
+
+            config.staticFiles.add("/public");
+
             // Raiz da API
             config.routes.get("/", ctx -> {
-                ctx.result("API de Projetos");
+                ctx.redirect("/api/projetos");
             });
 
             // -- GET / READ --
@@ -61,7 +64,7 @@ public class Api {
              */
 
             // -- POST / CREATE --
-            config.routes.post("api/projetos", ctx -> {
+            config.routes.post("/api/projetos", ctx -> {
                 Projeto projeto = ctx.bodyAsClass(Projeto.class);
 
                 if (projeto.getId() == 0)
@@ -80,7 +83,7 @@ public class Api {
             });
 
             // -- PUT / UPDATE --
-            config.routes.put("api/projetos/{id}", ctx -> {
+            config.routes.put("/api/projetos/{id}", ctx -> {
                 int id = Integer.parseInt(ctx.pathParam("id"));
 
                 Projeto projeto = ctx.bodyAsClass(Projeto.class);
@@ -99,7 +102,7 @@ public class Api {
             });
 
             // -- DELETE --
-            config.routes.delete("api/projetos/{id}", ctx -> {
+            config.routes.delete("/api/projetos/{id}", ctx -> {
                 int id = Integer.parseInt(ctx.pathParam("id"));
 
                 Projeto projeto = service.buscaPorId(id);
