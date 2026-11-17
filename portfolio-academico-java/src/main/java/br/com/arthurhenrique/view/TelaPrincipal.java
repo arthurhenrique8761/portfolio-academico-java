@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.util.concurrent.*;
 
 import br.com.arthurhenrique.model.Projeto;
 import br.com.arthurhenrique.service.ProjetoService;
@@ -39,7 +40,7 @@ public class TelaPrincipal extends JFrame {
     public TelaPrincipal() throws Exception {
         // configurações da janela
         setTitle("Sistema de Projetos");
-        setSize(800, 500);
+        setSize(1000, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -192,12 +193,8 @@ public class TelaPrincipal extends JFrame {
     }
 
     public void alterarProjeto() {
-        /*
-         * selecionar um preencher os dados no formulario e perguntar se deve alterar.
-         * o programa deve reconhecer se há algum projeto selecionado e, ao clicar em
-         * alterar, perguntar se tem certeza
-         */
 
+        // pega o index da linha selecionada
         int linhaSelecionada = tabela.getSelectedRow();
 
         if (linhaSelecionada != -1) {
@@ -229,7 +226,8 @@ public class TelaPrincipal extends JFrame {
                     return;
                 }
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Não foi possivel alterar o projeto");
+                JOptionPane.showMessageDialog(this, "Não foi possivel alterar o projeto", "Erro",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
         } else {
@@ -275,8 +273,29 @@ public class TelaPrincipal extends JFrame {
     }
 
     public static void main(String[] args) throws Exception {
+        /*
+         * -- essa parte parte precisa de tratamento de exceção, mas o try-catch não ta
+         * tendo efeito --
+         * SwingUtilities.invokeLater(() -> {
+         * Api.main(args);
+         * TelaPrincipal tela = new TelaPrincipal();
+         * tela.setVisible(true);
+         * });
+         */
+
         Api.main(args);
         TelaPrincipal tela = new TelaPrincipal();
         tela.setVisible(true);
+
+        // recarrega a tabela automaticamente a cada 5 segundos
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        Runnable task = () -> {
+            try {
+                tela.carregarTabela();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        scheduler.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
     }
 }

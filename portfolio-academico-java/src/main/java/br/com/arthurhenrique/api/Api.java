@@ -14,11 +14,11 @@ public class Api {
 
         var app = Javalin.create(config -> {
 
+            // Raiz da API
             config.staticFiles.add("/public");
 
-            // Raiz da API
             config.routes.get("/", ctx -> {
-                ctx.redirect("/api/projetos");
+                ctx.redirect("/projetos.html");
             });
 
             // -- GET / READ --

@@ -4,6 +4,7 @@ const listaProjetos = document.getElementById("listaProjetos");
 
 const mensagem = document.getElementById("mensagem");
 
+// listagem de projetos
 async function listarProjetos() {
     try {
         mensagem.textContent = "Carregando projetos...";
@@ -23,22 +24,23 @@ async function listarProjetos() {
     }
 }
 
+// excluir projeto || o parâmetro "projetos" é a variavel de mesmo nome "const projetos" da função de listagem. js é uma zona 
 function exibirProjetos(projetos) {
     listaProjetos.replaceChildren();
 
     if (projetos.length === 0) {
-        const mensagemVazia =
-            document.createElement("p");
-        mensagemVazia.textContent =
-            "Nenhum projeto cadastrado.";
+        const mensagemVazia = document.createElement("p");
+        mensagemVazia.textContent = "Nenhum projeto cadastrado.";
         listaProjetos.appendChild(mensagemVazia);
         return;
     }
 
     projetos.forEach(projeto => {
+        // cria um div tipo article e infere a classe "projeto"
         const card = document.createElement("article");
         card.classList.add("projeto");
 
+        // cria elementos html e insere as propriedades de cada projeto nos campos de texto de cada tag
         const titulo = document.createElement("h3");
         titulo.textContent = projeto.nome;
 
@@ -54,7 +56,12 @@ function exibirProjetos(projetos) {
         const botaoExcluir = document.createElement("button");
         botaoExcluir.textContent = "Excluir";
 
-        botaoExcluir.addEventListener("click", () => excluirProjeto(projeto.id));
+        function handleExcluirClick() {
+            excluirProjeto(projeto.id);
+        }
+        botaoExcluir.addEventListener("click", handleExcluirClick);
+
+        // insere os elementos acima na div article, e insere a div article dentro da div da "listaProjetos"
         card.appendChild(titulo);
         card.appendChild(descricao);
         card.appendChild(categoria);
@@ -64,11 +71,12 @@ function exibirProjetos(projetos) {
     });
 }
 
+// cadastrar projeto
 const formProjeto = document.getElementById("formProjeto");
-
-formProjeto.addEventListener("submit", async function (evento) {
+formProjeto.addEventListener('submit', async function (evento) {
     evento.preventDefault();
 
+    // definição de um objeto (exatamente isso) tipo projeto, atribuindo os valores dos respectivos campos
     const projeto = {
         nome: document.getElementById("nome").value,
         descricao: document.getElementById("descricao").value,
@@ -95,8 +103,7 @@ formProjeto.addEventListener("submit", async function (evento) {
         alert("Não foi possível cadastrar o projeto.");
         console.error(erro);
     }
-}
-);
+});
 
 async function excluirProjeto(id) {
     const confirmar = confirm("Deseja realmente excluir este projeto?");

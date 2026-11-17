@@ -3,3 +3,5 @@ id;nome;descricao;categoria;status
 2;Portfolio Academico;Portfolio Academico em Java;Software;Em desenvolvimento
 3;Atividades Java;Atividades desenvolvidas em linguagem Java;Software;Em desenvolvimento
 4;Projeto Teste;Projeto Teste;Web;Planejado
+5;Projeto Criado por API;Projeto criado por requisição da API REST;Software;Planejado
+7;Projeto Teste;Projeto Teste;Mobile;Concluído

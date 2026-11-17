@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Projetos</title>
-    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
@@ -26,7 +26,12 @@
                 <textarea id="descricao" required></textarea>
 
                 <label for="categoria">Categoria:</label>
-                <input type="text" id="categoria" required>
+                <select id="categoria">
+                    <option value="Web">Web</option>
+                    <option value="Software">Software</option>
+                    <option value="Mobile">Mobile</option>
+                    <option value="Outro">Outro</option>
+                </select>
 
                 <label for="status">Status:</label>
                 <select id="status">
@@ -47,7 +52,7 @@
 
     </main>
 
-    <script src="./js/projetos.js"></script>
+    <script src="js/projetos.js"></script>
 </body>
 
 </html>
