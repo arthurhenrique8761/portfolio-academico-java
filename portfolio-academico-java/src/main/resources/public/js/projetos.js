@@ -56,10 +56,18 @@ function exibirProjetos(projetos) {
         const botaoExcluir = document.createElement("button");
         botaoExcluir.textContent = "Excluir";
 
+        const botaoAlterar = document.createElement("button");
+        botaoAlterar.textContent = "Alterar";
+
         function handleExcluirClick() {
             excluirProjeto(projeto.id);
         }
         botaoExcluir.addEventListener("click", handleExcluirClick);
+
+        function handleAlterarClick() {
+            alterarProjeto(projeto.id);
+        }
+        botaoAlterar.addEventListener("click", handleAlterarClick)
 
         // insere os elementos acima na div article, e insere a div article dentro da div da "listaProjetos"
         card.appendChild(titulo);
@@ -67,6 +75,7 @@ function exibirProjetos(projetos) {
         card.appendChild(categoria);
         card.appendChild(status);
         card.appendChild(botaoExcluir);
+        card.appendChild(botaoAlterar);
         listaProjetos.appendChild(card);
     });
 }
@@ -121,6 +130,20 @@ async function excluirProjeto(id) {
         alert("Não foi possível excluir o projeto.");
         console.error(erro);
     }
+}
+
+async function alterarProjeto(id, projeto) {
+    const resposta = await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(projeto)
+    }
+    );
+
+    if (!resposta.ok) {
+        throw new Error("Erro ao alterar o projeto.");
+    }
+    return await resposta.json();
 }
 
 
