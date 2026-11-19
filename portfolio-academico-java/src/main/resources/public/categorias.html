@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorias - Sistema de Projetos</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Sistema de Projetos</h1>
+        <p>Exploração e filtragem de projetos por categoria</p>
+        <nav class="menu-navegacao">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="projetos.html">Projetos</a>
+            <a href="categorias.html" class="ativo">Categorias</a>
+            <a href="relatorios.html">Relatórios</a>
+        </nav>
+    </header>
+
+    <main>
+        <p id="mensagemCategorias" class="mensagem-status"></p>
+
+        <!-- Cartões de Categorias -->
+        <section>
+            <h2>Filtrar por Categoria</h2>
+            <div id="gridCategorias" class="grid-categorias"></div>
+        </section>
+
+        <!-- Lista de Projetos da Categoria Selecionada -->
+        <section>
+            <div class="cabecalho-secao">
+                <h2 id="tituloListagemCategoria">Todos os Projetos</h2>
+                <span id="contadorCategoria" class="badge-contagem">0 projeto(s)</span>
+            </div>
+            <div id="listaProjetosCategoria"></div>
+        </section>
+    </main>
+
+    <script src="js/categorias.js"></script>
+</body>
+
+</html>

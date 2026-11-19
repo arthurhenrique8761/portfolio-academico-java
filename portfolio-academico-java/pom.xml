@@ -9,10 +9,8 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>26</maven.compiler.source>
-        <maven.compiler.target>26</maven.compiler.target>
+        <maven.compiler.release>25</maven.compiler.release>
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.javalin</groupId>

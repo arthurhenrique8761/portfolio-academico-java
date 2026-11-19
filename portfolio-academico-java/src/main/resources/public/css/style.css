@@ -66,3 +66,296 @@ button {
 .projeto button {
     margin-top: 10px;
 }
+
+/* Menu de navegação no cabeçalho */
+.menu-navegacao {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.menu-navegacao a {
+    color: #cfd8dc;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.menu-navegacao a:hover,
+.menu-navegacao a.ativo {
+    background-color: #37474f;
+    color: #ffffff;
+}
+
+/* Grid de KPIs do Dashboard */
+.grid-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    background-color: transparent;
+    padding: 0;
+}
+
+.kpi-card {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 6px solid #263238;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.kpi-total {
+    border-left-color: #1976d2;
+}
+
+.kpi-concluido {
+    border-left-color: #2e7d32;
+}
+
+.kpi-andamento {
+    border-left-color: #ed6c02;
+}
+
+.kpi-planejado {
+    border-left-color: #7b1fa2;
+}
+
+.kpi-numero {
+    font-size: 32px;
+    font-weight: bold;
+    color: #222;
+}
+
+.kpi-titulo {
+    font-size: 14px;
+    color: #555;
+}
+
+/* Grid duplo para gráficos e resumo */
+.grid-duplo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+/* Barras de progresso */
+.lista-barras {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.barra-topo {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.barra-trilha {
+    width: 100%;
+    height: 10px;
+    background-color: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.barra-trilha.barra-grande {
+    height: 16px;
+    margin-top: 12px;
+}
+
+.barra-preenchimento {
+    height: 100%;
+    background-color: #1976d2;
+    transition: width 0.3s ease;
+}
+
+.barra-preenchimento.verde {
+    background-color: #2e7d32;
+}
+
+.percentual-destaque {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2e7d32;
+    margin: 8px 0;
+}
+
+.projeto-resumo p {
+    margin-bottom: 0;
+    color: #555;
+}
+
+/* Grid e cartões da página de Categorias */
+.grid-categorias {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+}
+
+.card-categoria {
+    background-color: #f9fafb;
+    border: 2px solid #cfd8dc;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    text-align: left;
+    color: #222;
+    transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
+}
+
+.card-categoria:hover {
+    border-color: #263238;
+    background-color: #eceff1;
+}
+
+.card-categoria.selecionada {
+    background-color: #263238;
+    border-color: #263238;
+    color: #ffffff;
+}
+
+.categoria-nome {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.categoria-qtd {
+    font-size: 13px;
+    opacity: 0.85;
+}
+
+.cabecalho-secao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.cabecalho-secao h2 {
+    margin: 0;
+}
+
+.badge-contagem {
+    background-color: #eceff1;
+    color: #263238;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Filtros e ações da página de Relatórios */
+.grid-filtros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.campo-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.acoes-relatorio {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.tabela-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.tabela-relatorio {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.tabela-relatorio th,
+.tabela-relatorio td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.tabela-relatorio th {
+    background-color: #f4f6f8;
+    color: #263238;
+    font-weight: bold;
+}
+
+.tabela-relatorio tbody tr:hover {
+    background-color: #fafafa;
+}
+
+.celula-vazia {
+    text-align: center !important;
+    color: #666;
+    padding: 24px !important;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.status-concluido {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-andamento {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+.status-planejado {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* Estilo para impressão / salvar em PDF */
+@media print {
+
+    .menu-navegacao,
+    .bloco-filtros,
+    .acoes-relatorio {
+        display: none !important;
+    }
+
+    body {
+        background-color: #ffffff;
+    }
+
+    main {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+    }
+
+    section {
+        box-shadow: none;
+        padding: 12px 0;
+    }
+}
