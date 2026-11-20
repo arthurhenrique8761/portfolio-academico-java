@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Projetos</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Sistema de Projetos</h1>
+        <p>Visão geral e indicadores do portfólio</p>
+        <nav class="menu-navegacao">
+            <a href="dashboard.html" class="ativo">Dashboard</a>
+            <a href="projetos.html">Projetos</a>
+            <a href="categorias.html">Categorias</a>
+            <a href="relatorios.html">Relatórios</a>
+        </nav>
+    </header>
+
+    <main>
+        <p id="mensagemDashboard" class="mensagem-status"></p>
+
+        <!-- Cards de Indicadores (KPIs) -->
+        <section class="grid-kpis">
+            <article class="kpi-card kpi-total">
+                <span class="kpi-numero" id="kpiTotal">0</span>
+                <span class="kpi-titulo">Total de Projetos</span>
+            </article>
+
+            <article class="kpi-card kpi-concluido">
+                <span class="kpi-numero" id="kpiConcluidos">0</span>
+                <span class="kpi-titulo">Concluídos</span>
+            </article>
+
+            <article class="kpi-card kpi-andamento">
+                <span class="kpi-numero" id="kpiAndamento">0</span>
+                <span class="kpi-titulo">Em Desenvolvimento</span>
+            </article>
+
+            <article class="kpi-card kpi-planejado">
+                <span class="kpi-numero" id="kpiPlanejados">0</span>
+                <span class="kpi-titulo">Planejados</span>
+            </article>
+        </section>
+
+        <!-- Distribuição por Categoria e Status -->
+        <div class="grid-duplo">
+            <section>
+                <h2>Distribuição por Categoria</h2>
+                <div id="graficoCategorias" class="lista-barras"></div>
+            </section>
+
+            <section>
+                <h2>Taxa de Conclusão</h2>
+                <div id="resumoProgresso" class="resumo-progresso"></div>
+            </section>
+        </div>
+
+        <!-- Projetos Recentes -->
+        <section>
+            <h2>Últimos Projetos Cadastrados</h2>
+            <div id="listaRecentes"></div>
+        </section>
+    </main>
+
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

@@ -1,13 +1,13 @@
 package br.com.arthurhenrique.api;
 
-import br.com.arthurhenrique.service.ProjetoService;
-import br.com.arthurhenrique.model.Projeto;
-
-import io.javalin.Javalin;
-
 import java.util.List;
 
+import br.com.arthurhenrique.model.Projeto;
+import br.com.arthurhenrique.service.ProjetoService;
+import io.javalin.Javalin;
+
 public class Api {
+
     public static void main(String[] args) throws Exception {
         ProjetoService service = new ProjetoService();
         service.carregar();
@@ -25,12 +25,6 @@ public class Api {
             // retorna todos os projetos
             config.routes.get("/api/projetos", ctx -> {
                 List<Projeto> projetos = service.listar();
-
-                if (projetos.isEmpty()) {
-                    ctx.status(404);
-                    return;
-                }
-
                 ctx.json(projetos);
             });
 
@@ -62,13 +56,13 @@ public class Api {
              * ctx.json(status);
              * });
              */
-
             // -- POST / CREATE --
             config.routes.post("/api/projetos", ctx -> {
                 Projeto projeto = ctx.bodyAsClass(Projeto.class);
 
-                if (projeto.getId() == 0)
+                if (projeto.getId() == 0) {
                     projeto.setId(service.gerarId());
+                }
 
                 if (projeto.getNome() == null || projeto.getNome().isBlank()) {
                     ctx.json("{\"erro\":\"Nome é obrigatório\"}");

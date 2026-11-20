@@ -1,13 +1,14 @@
 package br.com.arthurhenrique.service;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
+import br.com.arthurhenrique.dao.ProjetoCSV;
 import br.com.arthurhenrique.model.Projeto;
-import br.com.arthurhenrique.dao.*;
 
 // regras de negócio
 public class ProjetoService {
+
     private List<Projeto> projetos;
     private ProjetoCSV dao;
 
@@ -45,8 +46,9 @@ public class ProjetoService {
     // buscas
     public Projeto buscaPorId(int id) {
         for (Projeto projeto : projetos) {
-            if (projeto.getId() == id)
+            if (projeto.getId() == id) {
                 return projeto;
+            }
         }
         return null;
     }
@@ -66,14 +68,8 @@ public class ProjetoService {
     }
 
     // remoções
-    public boolean removerPorId(int id) { // não da pra fazer isso um void?
-        for (Projeto projeto : projetos) {
-            if (projeto.getId() == id) {
-                projetos.remove(id - 1);
-                return true;
-            }
-        }
-        return false;
+    public boolean removerPorId(int id) {
+        return projetos.removeIf(projeto -> projeto.getId() == id);
     }
 
     // alterações
@@ -81,8 +77,9 @@ public class ProjetoService {
         Projeto projeto = buscaPorId(projetoAtualizado.getId());
 
         // se o projeto não existe
-        if (projeto == null)
+        if (projeto == null) {
             return false;
+        }
 
         projeto.setNome(projetoAtualizado.getNome());
         projeto.setCategoria(projetoAtualizado.getCategoria());

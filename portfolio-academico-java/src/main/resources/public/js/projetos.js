@@ -1,10 +1,13 @@
 const API_URL = "http://localhost:7070/api/projetos";
 
 const listaProjetos = document.getElementById("listaProjetos");
-
 const mensagem = document.getElementById("mensagem");
+const formProjeto = document.getElementById("formProjeto");
+const botaoSubmit = formProjeto.querySelector("button[type='submit']");
 
-// listagem de projetos
+let idEmEdicao = null;
+
+// Listagem de projetos
 async function listarProjetos() {
     try {
         mensagem.textContent = "Carregando projetos...";
@@ -13,18 +16,20 @@ async function listarProjetos() {
         if (!resposta.ok) {
             throw new Error("Erro ao consultar a API.");
         }
-        const projetos = await resposta.json();
 
+        const projetos = await resposta.json();
         exibirProjetos(projetos);
 
-        mensagem.textContent = "Projetos carregados com sucesso.";
+        mensagem.textContent = projetos.length > 0
+            ? "Projetos carregados com sucesso."
+            : "";
     } catch (erro) {
         mensagem.textContent = "Não foi possível carregar os projetos.";
         console.error(erro);
     }
 }
 
-// excluir projeto || o parâmetro "projetos" é a variavel de mesmo nome "const projetos" da função de listagem. js é uma zona 
+// Renderização dos cards
 function exibirProjetos(projetos) {
     listaProjetos.replaceChildren();
 
@@ -36,11 +41,9 @@ function exibirProjetos(projetos) {
     }
 
     projetos.forEach(projeto => {
-        // cria um div tipo article e infere a classe "projeto"
         const card = document.createElement("article");
         card.classList.add("projeto");
 
-        // cria elementos html e insere as propriedades de cada projeto nos campos de texto de cada tag
         const titulo = document.createElement("h3");
         titulo.textContent = projeto.nome;
 
@@ -54,22 +57,15 @@ function exibirProjetos(projetos) {
         status.textContent = "Status: " + projeto.status;
 
         const botaoExcluir = document.createElement("button");
+        botaoExcluir.type = "button";
         botaoExcluir.textContent = "Excluir";
+        botaoExcluir.addEventListener("click", () => excluirProjeto(projeto.id));
 
         const botaoAlterar = document.createElement("button");
+        botaoAlterar.type = "button";
         botaoAlterar.textContent = "Alterar";
+        botaoAlterar.addEventListener("click", () => prepararEdicao(projeto));
 
-        function handleExcluirClick() {
-            excluirProjeto(projeto.id);
-        }
-        botaoExcluir.addEventListener("click", handleExcluirClick);
-
-        function handleAlterarClick() {
-            alterarProjeto(projeto.id);
-        }
-        botaoAlterar.addEventListener("click", handleAlterarClick)
-
-        // insere os elementos acima na div article, e insere a div article dentro da div da "listaProjetos"
         card.appendChild(titulo);
         card.appendChild(descricao);
         card.appendChild(categoria);
@@ -80,12 +76,22 @@ function exibirProjetos(projetos) {
     });
 }
 
-// cadastrar projeto
-const formProjeto = document.getElementById("formProjeto");
-formProjeto.addEventListener('submit', async function (evento) {
+// Preenche o formulário para edição
+function prepararEdicao(projeto) {
+    document.getElementById("nome").value = projeto.nome;
+    document.getElementById("descricao").value = projeto.descricao;
+    document.getElementById("categoria").value = projeto.categoria;
+    document.getElementById("status").value = projeto.status;
+
+    idEmEdicao = projeto.id;
+    botaoSubmit.textContent = "Salvar alterações";
+    formProjeto.scrollIntoView({ behavior: "smooth" });
+}
+
+// Cadastrar (POST) ou Alterar (PUT)
+formProjeto.addEventListener("submit", async function (evento) {
     evento.preventDefault();
 
-    // definição de um objeto (exatamente isso) tipo projeto, atribuindo os valores dos respectivos campos
     const projeto = {
         nome: document.getElementById("nome").value,
         descricao: document.getElementById("descricao").value,
@@ -94,31 +100,40 @@ formProjeto.addEventListener('submit', async function (evento) {
     };
 
     try {
-        const resposta = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(projeto)
-        });
-        if (!resposta.ok) {
-            throw new Error("Erro ao cadastrar o projeto.");
+        if (idEmEdicao !== null) {
+            await alterarProjeto(idEmEdicao, projeto);
+            alert("Projeto alterado com sucesso!");
+        } else {
+            const resposta = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(projeto)
+            });
+
+            if (!resposta.ok) {
+                throw new Error("Erro ao cadastrar o projeto.");
+            }
+            alert("Projeto cadastrado com sucesso!");
         }
 
-        alert("Projeto cadastrado com sucesso!");
-
+        idEmEdicao = null;
+        botaoSubmit.textContent = "Cadastrar projeto";
         formProjeto.reset();
         await listarProjetos();
 
     } catch (erro) {
-        alert("Não foi possível cadastrar o projeto.");
+        alert(idEmEdicao !== null
+            ? "Não foi possível alterar o projeto."
+            : "Não foi possível cadastrar o projeto.");
         console.error(erro);
     }
 });
 
+// Excluir (DELETE)
 async function excluirProjeto(id) {
     const confirmar = confirm("Deseja realmente excluir este projeto?");
-    if (!confirmar) {
-        return;
-    }
+    if (!confirmar) return;
+
     try {
         const resposta = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
         if (!resposta.ok) {
@@ -132,19 +147,18 @@ async function excluirProjeto(id) {
     }
 }
 
+// Alterar (PUT)
 async function alterarProjeto(id, projeto) {
     const resposta = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(projeto)
-    }
-    );
+    });
 
     if (!resposta.ok) {
         throw new Error("Erro ao alterar o projeto.");
     }
     return await resposta.json();
 }
-
 
 listarProjetos();

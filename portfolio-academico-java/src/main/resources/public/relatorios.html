@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - Sistema de Projetos</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Sistema de Projetos</h1>
+        <p>Relatórios detalhados, filtros e exportação de dados</p>
+        <nav class="menu-navegacao">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="projetos.html">Projetos</a>
+            <a href="categorias.html">Categorias</a>
+            <a href="relatorios.html" class="ativo">Relatórios</a>
+        </nav>
+    </header>
+
+    <main>
+        <p id="mensagemRelatorio" class="mensagem-status"></p>
+
+        <!-- Filtros e Ações -->
+        <section class="bloco-filtros">
+            <h2>Filtros do Relatório</h2>
+
+            <div class="grid-filtros">
+                <div class="campo-filtro">
+                    <label for="filtroBusca">Buscar por nome ou descrição:</label>
+                    <input type="text" id="filtroBusca" placeholder="Ex.: Portfólio, API, Mobile...">
+                </div>
+
+                <div class="campo-filtro">
+                    <label for="filtroCategoria">Categoria:</label>
+                    <select id="filtroCategoria">
+                        <option value="Todas">Todas</option>
+                        <option value="Web">Web</option>
+                        <option value="Software">Software</option>
+                        <option value="Mobile">Mobile</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+
+                <div class="campo-filtro">
+                    <label for="filtroStatus">Status:</label>
+                    <select id="filtroStatus">
+                        <option value="Todos">Todos</option>
+                        <option value="Planejado">Planejado</option>
+                        <option value="Em desenvolvimento">Em desenvolvimento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="acoes-relatorio">
+                <button type="button" id="btnLimparFiltros">Limpar filtros</button>
+                <button type="button" id="btnExportarCsv">Exportar CSV</button>
+                <button type="button" id="btnImprimir">Imprimir / Salvar PDF</button>
+            </div>
+        </section>
+
+        <!-- Tabela de Resultados -->
+        <section>
+            <div class="cabecalho-secao">
+                <h2>Listagem Analítica</h2>
+                <span id="resumoQuantidade" class="badge-contagem">0 registro(s)</span>
+            </div>
+
+            <div class="tabela-container">
+                <table class="tabela-relatorio">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabelaRelatorio"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/relatorios.js"></script>
+</body>
+
+</html>

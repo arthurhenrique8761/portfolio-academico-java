@@ -8,6 +8,7 @@ import br.com.arthurhenrique.model.Projeto;
 import br.com.arthurhenrique.service.ProjetoService;
 
 public class Main {
+
     public static void main(String[] args) throws Exception {
         // TO DO:
         // Fix: Busca por status não funciona com "concluído" e "em desenvolvimento"
