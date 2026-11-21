@@ -1,59 +1,59 @@
 package br.com.arthurhenrique.view;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import javax.swing.*;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableModel;
-import java.util.concurrent.*;
 
-import br.com.arthurhenrique.model.Projeto;
-import br.com.arthurhenrique.service.ProjetoService;
 import br.com.arthurhenrique.api.Api;
 import br.com.arthurhenrique.client.ApiClient;
-
-// TO DO
-//
+import br.com.arthurhenrique.log.LogManager;
+import br.com.arthurhenrique.model.Projeto;
+import br.com.arthurhenrique.service.ProjetoService;
 
 public class TelaPrincipal extends JFrame {
 
     private ProjetoService service;
     private ApiClient apiClient;
 
-    // campos de texto
     private JTextField campoNome;
     private JTextField campoDescricao;
+    private JTextField campoPrazo;
 
-    // tabela de opções
     private JComboBox<String> comboCategoria;
     private JComboBox<String> comboStatus;
 
-    // tabela
     private DefaultTableModel modelo;
     private JTable tabela;
 
-    // botões
     private JButton botaoCadastrar;
     private JButton botaoLimpar;
     private JButton botaoExcluir;
     private JButton botaoAlterar;
 
     public TelaPrincipal() throws Exception {
-        // configurações da janela
         setTitle("Sistema de Projetos");
-        setSize(1000, 800);
+        setSize(1100, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // chamada dos métodos criam os elementos da janela (modularizando as tarefas)
 
         service = new ProjetoService();
         apiClient = new ApiClient();
 
-        /*
-         * os metodos estão sem nome pois como a classe atual herda de JFrame, os
-         * métodos do JFrame passam a ser
-         * dessa classe, sem a necessidade de instânciar um objeto JFrame
-         */
         criarComponentes();
         criarEventos();
 
@@ -62,26 +62,26 @@ public class TelaPrincipal extends JFrame {
     }
 
     public void criarComponentes() {
-
-        // definição e instanciação dos elementos da janela
-        campoNome = new JTextField(30);
-
-        campoDescricao = new JTextField(30);
+        campoNome = new JTextField(22);
+        campoDescricao = new JTextField(26);
+        campoPrazo = new JTextField(10);
+        campoPrazo.setToolTipText("AAAA-MM-DD ou DD/MM/AAAA");
 
         comboCategoria = new JComboBox<>();
-        comboCategoria.addItem("Web");
         comboCategoria.addItem("Software");
         comboCategoria.addItem("Mobile");
-        comboCategoria.addItem("Outro");
+        comboCategoria.addItem("Web");
+        comboCategoria.addItem("Desktop");
 
         comboStatus = new JComboBox<>();
         comboStatus.addItem("Planejado");
-        comboStatus.addItem("Em desenvolvimento");
+        comboStatus.addItem("Em Desenvolvimento");
         comboStatus.addItem("Concluído");
+        comboStatus.addItem("Cancelado");
 
         botaoCadastrar = new JButton("Cadastrar");
         botaoLimpar = new JButton("Limpar");
-        botaoExcluir = new JButton("Exclur");
+        botaoExcluir = new JButton("Excluir");
         botaoAlterar = new JButton("Alterar");
 
         modelo = new DefaultTableModel();
@@ -89,9 +89,9 @@ public class TelaPrincipal extends JFrame {
         modelo.addColumn("Nome");
         modelo.addColumn("Categoria");
         modelo.addColumn("Status");
+        modelo.addColumn("Prazo");
         tabela = new JTable(modelo);
 
-        // instanciação da janela e inserção dos componentes (em ordem)
         JPanel painelFormulario = new JPanel();
 
         painelFormulario.add(new JLabel("Nome: "));
@@ -106,138 +106,122 @@ public class TelaPrincipal extends JFrame {
         painelFormulario.add(new JLabel("Status: "));
         painelFormulario.add(comboStatus);
 
+        painelFormulario.add(new JLabel("Prazo: "));
+        painelFormulario.add(campoPrazo);
+
         painelFormulario.add(botaoCadastrar);
         painelFormulario.add(botaoLimpar);
         painelFormulario.add(botaoExcluir);
         painelFormulario.add(botaoAlterar);
 
-        setLayout(new BoxLayout(
-                getContentPane(),
-                BoxLayout.Y_AXIS));
+        setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 
         add(painelFormulario);
         add(new JScrollPane(tabela));
     }
 
     public void criarEventos() {
-        botaoCadastrar.addActionListener(e -> {
-            try {
-                cadastrar();
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(this, "Erro: " + e1.getMessage());
-            }
-        });
-
-        botaoLimpar.addActionListener(e -> limparFormulário());
+        botaoCadastrar.addActionListener(e -> cadastrar());
+        botaoLimpar.addActionListener(e -> limparFormulario());
         botaoExcluir.addActionListener(e -> excluirProjeto());
         botaoAlterar.addActionListener(e -> alterarProjeto());
     }
 
-    public void limparFormulário() {
+    public void limparFormulario() {
         campoNome.setText("");
         campoDescricao.setText("");
+        campoPrazo.setText("");
         comboCategoria.setSelectedIndex(0);
         comboStatus.setSelectedIndex(0);
         campoNome.requestFocus();
     }
 
+    private Projeto montarEValidarProjeto(int id) {
+        String nome = campoNome.getText();
+        String descricao = campoDescricao.getText();
+        String categoria = comboCategoria.getSelectedItem().toString();
+        String status = comboStatus.getSelectedItem().toString();
+        LocalDate dataCriacao = LocalDate.now();
+        LocalDate prazo = ProjetoService.parseDataFlexivel(campoPrazo.getText());
+
+        Projeto projeto = new Projeto(id, nome, descricao, categoria, status, dataCriacao, prazo);
+        service.validarProjeto(projeto, false, null);
+        return projeto;
+    }
+
     public void cadastrar() {
         try {
+            service.carregar();
             int id = service.gerarId();
-            String nome = campoNome.getText();
-            String descricao = campoDescricao.getText();
-            String categoria = comboCategoria.getSelectedItem().toString();
-            String status = comboStatus.getSelectedItem().toString();
+            Projeto projeto = montarEValidarProjeto(id);
 
-            if (nome.isBlank()) {
-                JOptionPane.showMessageDialog(this, "Informe o nome do projeto");
-                return;
-            }
-
-            Projeto projeto = new Projeto(id, nome, descricao, categoria, status);
             apiClient.cadastrarProjeto(projeto);
+            JOptionPane.showMessageDialog(this, "Projeto Cadastrado: " + projeto.getNome());
 
-            JOptionPane.showMessageDialog(this, "Projeto Cadastrado: " + nome);
-
-            limparFormulário();
+            limparFormulario();
             carregarTabela();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            LogManager.error("DESKTOP_CADASTRO", e.getMessage());
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro de Validação", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     public void excluirProjeto() {
         try {
             int linhaSelecionada = tabela.getSelectedRow();
-            int id = linhaSelecionada + 1;
-
-            if (linhaSelecionada != -1) {
-                int option = JOptionPane.showConfirmDialog(this, "Um projeto será deletado.\nEstá certo disso?",
-                        "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-                if (option == 0) {
-                    apiClient.excluirProjeto(id);
-                    JOptionPane.showMessageDialog(null, "Projeto excluido com sucesso", "Sucesso",
-                            JOptionPane.PLAIN_MESSAGE);
-
-                    carregarTabela();
-                }
-            } else {
+            if (linhaSelecionada == -1) {
                 JOptionPane.showMessageDialog(this, "Por favor, selecione um projeto", "Aviso",
                         JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
-        }
 
+            int id = Integer.parseInt(modelo.getValueAt(linhaSelecionada, 0).toString());
+
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Um projeto será deletado.\nEstá certo disso?",
+                    "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+            if (option == JOptionPane.YES_OPTION) {
+                apiClient.excluirProjeto(id);
+                JOptionPane.showMessageDialog(this, "Projeto excluído com sucesso", "Sucesso",
+                        JOptionPane.PLAIN_MESSAGE);
+                carregarTabela();
+            }
+        } catch (Exception e) {
+            LogManager.error("DESKTOP_EXCLUSAO", e.getMessage());
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void alterarProjeto() {
-
-        // pega o index da linha selecionada
         int linhaSelecionada = tabela.getSelectedRow();
-
-        if (linhaSelecionada != -1) {
-            try {
-                int id = linhaSelecionada + 1;
-                String nome = campoNome.getText();
-                String descricao = campoDescricao.getText();
-                String categoria = comboCategoria.getSelectedItem().toString();
-                String status = comboStatus.getSelectedItem().toString();
-
-                if (nome.isBlank()) {
-                    JOptionPane.showMessageDialog(this, "Informe o nome do projeto", "Aviso",
-                            JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-
-                int option = JOptionPane.showConfirmDialog(this, "Um projeto será alterado.\nEstá certo disso?",
-                        "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-
-                if (option == 0) {
-                    Projeto projetoAtualizado = new Projeto(id, nome, descricao, categoria, status);
-
-                    apiClient.alterarProjeto(id, projetoAtualizado);
-                    carregarTabela();
-
-                    JOptionPane.showMessageDialog(this, "Projeto alterado com sucesso", "Sucesso",
-                            JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    return;
-                }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Não foi possivel alterar o projeto", "Erro",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        } else {
+        if (linhaSelecionada == -1) {
             JOptionPane.showMessageDialog(this, "Por favor, selecione um projeto", "Aviso",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
         }
+
+        try {
+            int id = Integer.parseInt(modelo.getValueAt(linhaSelecionada, 0).toString());
+            Projeto projetoAtualizado = montarEValidarProjeto(id);
+
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Um projeto será alterado.\nEstá certo disso?",
+                    "Aviso", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+            if (option == JOptionPane.YES_OPTION) {
+                apiClient.alterarProjeto(id, projetoAtualizado);
+                carregarTabela();
+                JOptionPane.showMessageDialog(this, "Projeto alterado com sucesso", "Sucesso",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            LogManager.error("DESKTOP_ALTERACAO", e.getMessage());
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
-    public void carregarTabela() throws Exception {
+    public void carregarTabela() {
         new SwingWorker<List<Projeto>, Void>() {
             @Override
             protected List<Projeto> doInBackground() throws Exception {
@@ -253,41 +237,28 @@ public class TelaPrincipal extends JFrame {
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
-
         }.execute();
-
     }
 
     public void atualizarTabela(List<Projeto> projetos) {
         modelo.setRowCount(0);
 
         for (Projeto projeto : projetos) {
-            modelo.addRow(
-                    new Object[] {
-                            projeto.getId(),
-                            projeto.getNome(),
-                            projeto.getCategoria(),
-                            projeto.getStatus()
-                    });
+            modelo.addRow(new Object[]{
+                projeto.getId(),
+                projeto.getNome(),
+                projeto.getCategoria(),
+                projeto.getStatus(),
+                projeto.getPrazo() != null ? projeto.getPrazo().toString() : "-"
+            });
         }
     }
 
     public static void main(String[] args) throws Exception {
-        /*
-         * -- essa parte parte precisa de tratamento de exceção, mas o try-catch não ta
-         * tendo efeito --
-         * SwingUtilities.invokeLater(() -> {
-         * Api.main(args);
-         * TelaPrincipal tela = new TelaPrincipal();
-         * tela.setVisible(true);
-         * });
-         */
-
-        Api.main(args);
+        Api.iniciar(System.getProperty("user.name"));
         TelaPrincipal tela = new TelaPrincipal();
         tela.setVisible(true);
 
-        // recarrega a tabela automaticamente a cada 5 segundos
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         Runnable task = () -> {
             try {
@@ -296,6 +267,6 @@ public class TelaPrincipal extends JFrame {
                 e.printStackTrace();
             }
         };
-        scheduler.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(task, 5, 5, TimeUnit.SECONDS);
     }
 }

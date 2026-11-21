@@ -1,18 +1,21 @@
 package br.com.arthurhenrique.client;
 
-import java.util.List;
-import br.com.arthurhenrique.model.Projeto;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import br.com.arthurhenrique.model.Projeto;
 
 public class ApiClient {
 
-    // pq iniciar os objetos no construtor?
     private final String baseUrl = "http://localhost:7070";
     private final HttpClient client;
     private final ObjectMapper mapper;
@@ -20,30 +23,44 @@ public class ApiClient {
     public ApiClient() {
         client = HttpClient.newHttpClient();
         mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+
+    private String extrairMensagemErro(String body, int statusCode) {
+        if (body != null && !body.isBlank()) {
+            try {
+                Map<String, Object> mapa = mapper.readValue(body, new TypeReference<Map<String, Object>>() {
+                });
+                if (mapa.get("erro") != null) {
+                    return mapa.get("erro").toString();
+                }
+            } catch (Exception ignored) {
+            }
+            return body;
+        }
+        return "Erro HTTP " + statusCode;
     }
 
     // GET
     public List<Projeto> listarProjetos() throws Exception {
-        // faz a requisição pra api
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/projetos"))
                 .GET()
                 .build();
 
-        // recebe a requisição
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        // retorna a requisição em um Json
-        // return response.body();
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new RuntimeException(extrairMensagemErro(response.body(), response.statusCode()));
+        }
 
-        // converte a requisição de json para list
         return mapper.readValue(response.body(), new TypeReference<List<Projeto>>() {
         });
     }
 
     // POST
     public Projeto cadastrarProjeto(Projeto projeto) throws Exception {
-        // transforma o projeto do parâmetro em json
         String json = mapper.writeValueAsString(projeto);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -53,6 +70,10 @@ public class ApiClient {
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new RuntimeException(extrairMensagemErro(response.body(), response.statusCode()));
+        }
 
         return mapper.readValue(response.body(), Projeto.class);
     }
@@ -67,7 +88,7 @@ public class ApiClient {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 204) {
-            throw new RuntimeException("Erro ao excluir o projeto: " + response.statusCode());
+            throw new RuntimeException(extrairMensagemErro(response.body(), response.statusCode()));
         }
     }
 
@@ -84,7 +105,7 @@ public class ApiClient {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Erro ao alterar projeto: " + response.statusCode());
+            throw new RuntimeException(extrairMensagemErro(response.body(), response.statusCode()));
         }
 
         return mapper.readValue(response.body(), Projeto.class);

@@ -10,16 +10,14 @@
 
 <body>
     <header>
-        <header>
-            <h1>Sistema de Projetos</h1>
-            <p>Gerenciamento de projetos e portfólio</p>
-            <nav class="menu-navegacao">
-                <a href="dashboard.html">Dashboard</a>
-                <a href="projetos.html" class="ativo">Projetos</a>
-                <a href="categorias.html">Categorias</a>
-                <a href="relatorios.html">Relatórios</a>
-            </nav>
-        </header>
+        <h1>Sistema de Projetos</h1>
+        <p>Gerenciamento de projetos e portfólio</p>
+        <nav class="menu-navegacao">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="projetos.html" class="ativo">Projetos</a>
+            <a href="categorias.html">Categorias</a>
+            <a href="relatorios.html">Relatórios</a>
+        </nav>
     </header>
 
     <main>
@@ -35,18 +33,22 @@
 
                 <label for="categoria">Categoria:</label>
                 <select id="categoria">
-                    <option value="Web">Web</option>
                     <option value="Software">Software</option>
                     <option value="Mobile">Mobile</option>
-                    <option value="Outro">Outro</option>
+                    <option value="Web">Web</option>
+                    <option value="Desktop">Desktop</option>
                 </select>
 
                 <label for="status">Status:</label>
                 <select id="status">
                     <option value="Planejado">Planejado</option>
-                    <option value="Em desenvolvimento">Em desenvolvimento</option>
+                    <option value="Em Desenvolvimento">Em Desenvolvimento</option>
                     <option value="Concluído">Concluído</option>
+                    <option value="Cancelado">Cancelado</option>
                 </select>
+
+                <label for="prazo">Prazo (opcional):</label>
+                <input type="date" id="prazo">
 
                 <button type="submit">Cadastrar projeto</button>
             </form>

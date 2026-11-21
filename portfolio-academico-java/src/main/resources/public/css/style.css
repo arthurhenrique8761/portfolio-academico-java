@@ -359,3 +359,33 @@ button {
         padding: 12px 0;
     }
 }
+
+/* Estilos dos gráficos do Dashboard (Chart.js) */
+.kpi-cancelado {
+    border-left-color: #c62828;
+}
+
+.container-grafico {
+    position: relative;
+    width: 100%;
+    height: 280px;
+}
+
+.container-grafico-baixo {
+    height: 220px;
+}
+
+.legenda-centro {
+    text-align: center;
+    font-size: 14px;
+    color: #444;
+    margin-top: 12px;
+    margin-bottom: 0;
+}
+
+.texto-suave {
+    font-size: 13px;
+    color: #666;
+    margin-top: -6px;
+    margin-bottom: 12px;
+}

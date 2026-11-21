@@ -1,13 +1,19 @@
 package br.com.arthurhenrique.model;
 
+import java.time.LocalDate;
+
 public class Projeto {
+
     private int id;
     private String nome;
     private String descricao;
     private String categoria;
     private String status;
+    private LocalDate dataCriacao;
+    private LocalDate prazo;
 
     public Projeto() {
+        this.dataCriacao = LocalDate.now();
     }
 
     public Projeto(int id, String nome, String descricao, String categoria, String status) {
@@ -16,20 +22,19 @@ public class Projeto {
         this.descricao = descricao;
         this.categoria = categoria;
         this.status = status;
+        this.dataCriacao = LocalDate.now();
     }
 
-    /*
-     * public Projeto(String nome, String descricao, String categoria, String
-     * status) {
-     * Random random = new Random();
-     * 
-     * id = random.nextInt(89) + 10;
-     * this.nome = nome;
-     * this.descricao = descricao;
-     * this.categoria = categoria;
-     * this.status = status;
-     * }
-     */
+    public Projeto(int id, String nome, String descricao, String categoria, String status,
+            LocalDate dataCriacao, LocalDate prazo) {
+        this.id = id;
+        this.nome = nome;
+        this.descricao = descricao;
+        this.categoria = categoria;
+        this.status = status;
+        this.dataCriacao = dataCriacao != null ? dataCriacao : LocalDate.now();
+        this.prazo = prazo;
+    }
 
     public void exibirDados() {
         System.out.println("ID: " + id);
@@ -37,6 +42,8 @@ public class Projeto {
         System.out.println("Descrição: " + descricao);
         System.out.println("Categoria: " + categoria);
         System.out.println("Status: " + status);
+        System.out.println("Data de Criação: " + dataCriacao);
+        System.out.println("Prazo: " + prazo);
         System.out.println("-------------------");
     }
 
@@ -80,8 +87,27 @@ public class Projeto {
         this.status = status;
     }
 
-    public String toString() {
-        return String.format("ID: %d\nNome: %s\nDescrição: %s\nCategoria: %s\nStatus: %s");
+    public LocalDate getDataCriacao() {
+        return dataCriacao;
     }
 
+    public void setDataCriacao(LocalDate dataCriacao) {
+        this.dataCriacao = dataCriacao;
+    }
+
+    public LocalDate getPrazo() {
+        return prazo;
+    }
+
+    public void setPrazo(LocalDate prazo) {
+        this.prazo = prazo;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "ID: %d%nNome: %s%nDescrição: %s%nCategoria: %s%nStatus: %s%nData de Criação: %s%nPrazo: %s",
+                id, nome, descricao, categoria, status, dataCriacao, prazo
+        );
+    }
 }

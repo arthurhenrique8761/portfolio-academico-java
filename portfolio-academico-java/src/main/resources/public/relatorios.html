@@ -37,10 +37,10 @@
                     <label for="filtroCategoria">Categoria:</label>
                     <select id="filtroCategoria">
                         <option value="Todas">Todas</option>
-                        <option value="Web">Web</option>
                         <option value="Software">Software</option>
                         <option value="Mobile">Mobile</option>
-                        <option value="Outro">Outro</option>
+                        <option value="Web">Web</option>
+                        <option value="Desktop">Desktop</option>
                     </select>
                 </div>
 
@@ -49,8 +49,9 @@
                     <select id="filtroStatus">
                         <option value="Todos">Todos</option>
                         <option value="Planejado">Planejado</option>
-                        <option value="Em desenvolvimento">Em desenvolvimento</option>
+                        <option value="Em Desenvolvimento">Em Desenvolvimento</option>
                         <option value="Concluído">Concluído</option>
+                        <option value="Cancelado">Cancelado</option>
                     </select>
                 </div>
             </div>
@@ -78,6 +79,7 @@
                             <th>Descrição</th>
                             <th>Categoria</th>
                             <th>Status</th>
+                            <th>Prazo</th>
                         </tr>
                     </thead>
                     <tbody id="corpoTabelaRelatorio"></tbody>
