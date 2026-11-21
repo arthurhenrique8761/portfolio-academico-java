@@ -6,3 +6,5 @@ bin/
 .vscode/
 *.class
 *.jar
+target/
+logs/

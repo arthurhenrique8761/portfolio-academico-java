@@ -6,7 +6,7 @@ const tituloListagemCategoria = document.getElementById("tituloListagemCategoria
 const contadorCategoria = document.getElementById("contadorCategoria");
 const listaProjetosCategoria = document.getElementById("listaProjetosCategoria");
 
-const CATEGORIAS_PADRAO = ["Web", "Software", "Mobile", "Outro"];
+const CATEGORIAS_PADRAO = ["Software", "Mobile", "Web", "Desktop"];
 
 let todosProjetos = [];
 let categoriaSelecionada = "Todas";

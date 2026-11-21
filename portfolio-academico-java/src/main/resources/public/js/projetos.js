@@ -6,8 +6,8 @@ const formProjeto = document.getElementById("formProjeto");
 const botaoSubmit = formProjeto.querySelector("button[type='submit']");
 
 let idEmEdicao = null;
+let dataCriacaoEmEdicao = null;
 
-// Listagem de projetos
 async function listarProjetos() {
     try {
         mensagem.textContent = "Carregando projetos...";
@@ -29,7 +29,6 @@ async function listarProjetos() {
     }
 }
 
-// Renderização dos cards
 function exibirProjetos(projetos) {
     listaProjetos.replaceChildren();
 
@@ -45,7 +44,7 @@ function exibirProjetos(projetos) {
         card.classList.add("projeto");
 
         const titulo = document.createElement("h3");
-        titulo.textContent = projeto.nome;
+        titulo.textContent = `#${projeto.id} - ${projeto.nome}`;
 
         const descricao = document.createElement("p");
         descricao.textContent = projeto.descricao;
@@ -55,6 +54,9 @@ function exibirProjetos(projetos) {
 
         const status = document.createElement("p");
         status.textContent = "Status: " + projeto.status;
+
+        const prazo = document.createElement("p");
+        prazo.textContent = "Prazo: " + (projeto.prazo || "Não definido");
 
         const botaoExcluir = document.createElement("button");
         botaoExcluir.type = "button";
@@ -70,33 +72,50 @@ function exibirProjetos(projetos) {
         card.appendChild(descricao);
         card.appendChild(categoria);
         card.appendChild(status);
+        card.appendChild(prazo);
         card.appendChild(botaoExcluir);
         card.appendChild(botaoAlterar);
         listaProjetos.appendChild(card);
     });
 }
 
-// Preenche o formulário para edição
 function prepararEdicao(projeto) {
-    document.getElementById("nome").value = projeto.nome;
-    document.getElementById("descricao").value = projeto.descricao;
-    document.getElementById("categoria").value = projeto.categoria;
-    document.getElementById("status").value = projeto.status;
+    document.getElementById("nome").value = projeto.nome || "";
+    document.getElementById("descricao").value = projeto.descricao || "";
+    document.getElementById("categoria").value = projeto.categoria || "Software";
+    document.getElementById("status").value = projeto.status || "Planejado";
+    document.getElementById("prazo").value = projeto.prazo || "";
 
     idEmEdicao = projeto.id;
+    dataCriacaoEmEdicao = projeto.dataCriacao || null;
     botaoSubmit.textContent = "Salvar alterações";
     formProjeto.scrollIntoView({ behavior: "smooth" });
 }
 
-// Cadastrar (POST) ou Alterar (PUT)
+async function extrairErroResposta(resposta, fallback) {
+    try {
+        const dados = await resposta.json();
+        if (dados && dados.erro) {
+            return dados.erro;
+        }
+    } catch (_) {
+    }
+    return fallback;
+}
+
 formProjeto.addEventListener("submit", async function (evento) {
     evento.preventDefault();
+
+    const prazoValor = document.getElementById("prazo").value;
+    const hojeIso = new Date().toISOString().slice(0, 10);
 
     const projeto = {
         nome: document.getElementById("nome").value,
         descricao: document.getElementById("descricao").value,
         categoria: document.getElementById("categoria").value,
-        status: document.getElementById("status").value
+        status: document.getElementById("status").value,
+        dataCriacao: idEmEdicao !== null && dataCriacaoEmEdicao ? dataCriacaoEmEdicao : hojeIso,
+        prazo: prazoValor ? prazoValor : null
     };
 
     try {
@@ -111,25 +130,26 @@ formProjeto.addEventListener("submit", async function (evento) {
             });
 
             if (!resposta.ok) {
-                throw new Error("Erro ao cadastrar o projeto.");
+                const msgErro = await extrairErroResposta(resposta, "Não foi possível cadastrar o projeto.");
+                throw new Error(msgErro);
             }
             alert("Projeto cadastrado com sucesso!");
         }
 
         idEmEdicao = null;
+        dataCriacaoEmEdicao = null;
         botaoSubmit.textContent = "Cadastrar projeto";
         formProjeto.reset();
         await listarProjetos();
 
     } catch (erro) {
-        alert(idEmEdicao !== null
+        alert(erro.message || (idEmEdicao !== null
             ? "Não foi possível alterar o projeto."
-            : "Não foi possível cadastrar o projeto.");
+            : "Não foi possível cadastrar o projeto."));
         console.error(erro);
     }
 });
 
-// Excluir (DELETE)
 async function excluirProjeto(id) {
     const confirmar = confirm("Deseja realmente excluir este projeto?");
     if (!confirmar) return;
@@ -137,17 +157,17 @@ async function excluirProjeto(id) {
     try {
         const resposta = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
         if (!resposta.ok) {
-            throw new Error("Erro ao excluir o projeto.");
+            const msgErro = await extrairErroResposta(resposta, "Não foi possível excluir o projeto.");
+            throw new Error(msgErro);
         }
         alert("Projeto excluído com sucesso!");
         await listarProjetos();
     } catch (erro) {
-        alert("Não foi possível excluir o projeto.");
+        alert(erro.message || "Não foi possível excluir o projeto.");
         console.error(erro);
     }
 }
 
-// Alterar (PUT)
 async function alterarProjeto(id, projeto) {
     const resposta = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
@@ -156,7 +176,8 @@ async function alterarProjeto(id, projeto) {
     });
 
     if (!resposta.ok) {
-        throw new Error("Erro ao alterar o projeto.");
+        const msgErro = await extrairErroResposta(resposta, "Não foi possível alterar o projeto.");
+        throw new Error(msgErro);
     }
     return await resposta.json();
 }

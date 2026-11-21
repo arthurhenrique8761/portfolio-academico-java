@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Sistema de Projetos</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -23,7 +24,7 @@
     <main>
         <p id="mensagemDashboard" class="mensagem-status"></p>
 
-        <!-- Cards de Indicadores (KPIs) -->
+        <!-- Dashboard 1 - Visão Geral (Cards Superiores) -->
         <section class="grid-kpis">
             <article class="kpi-card kpi-total">
                 <span class="kpi-numero" id="kpiTotal">0</span>
@@ -32,32 +33,63 @@
 
             <article class="kpi-card kpi-concluido">
                 <span class="kpi-numero" id="kpiConcluidos">0</span>
-                <span class="kpi-titulo">Concluídos</span>
+                <span class="kpi-titulo">Projetos Concluídos</span>
             </article>
 
             <article class="kpi-card kpi-andamento">
                 <span class="kpi-numero" id="kpiAndamento">0</span>
-                <span class="kpi-titulo">Em Desenvolvimento</span>
+                <span class="kpi-titulo">Projetos Ativos</span>
             </article>
 
-            <article class="kpi-card kpi-planejado">
-                <span class="kpi-numero" id="kpiPlanejados">0</span>
-                <span class="kpi-titulo">Planejados</span>
+            <article class="kpi-card kpi-cancelado">
+                <span class="kpi-numero" id="kpiCancelados">0</span>
+                <span class="kpi-titulo">Projetos Cancelados</span>
             </article>
         </section>
 
-        <!-- Distribuição por Categoria e Status -->
+        <!-- Dashboard 2 (Pizza) e Dashboard 3 (Colunas/Barras) -->
         <div class="grid-duplo">
             <section>
-                <h2>Distribuição por Categoria</h2>
-                <div id="graficoCategorias" class="lista-barras"></div>
+                <h2>Status dos Projetos</h2>
+                <div class="container-grafico">
+                    <canvas id="graficoStatusPizza"></canvas>
+                </div>
             </section>
 
             <section>
-                <h2>Taxa de Conclusão</h2>
-                <div id="resumoProgresso" class="resumo-progresso"></div>
+                <h2>Projetos por Categoria</h2>
+                <div class="container-grafico">
+                    <canvas id="graficoCategoriasColunas"></canvas>
+                </div>
             </section>
         </div>
+
+        <!-- Dashboard 4 (Linha) e Dashboard 5 (Rosca/Donut) -->
+        <div class="grid-duplo">
+            <section>
+                <h2>Evolução Mensal</h2>
+                <div class="container-grafico">
+                    <canvas id="graficoEvolucaoLinha"></canvas>
+                </div>
+            </section>
+
+            <section>
+                <h2>Cumprimento de Prazos</h2>
+                <div class="container-grafico">
+                    <canvas id="graficoPrazosDonut"></canvas>
+                </div>
+                <p id="legendaPrazos" class="legenda-centro"></p>
+            </section>
+        </div>
+
+        <!-- Dashboard 6 (Barras Horizontais - Usuários Mais Ativos) -->
+        <section>
+            <h2>Usuários Mais Ativos</h2>
+            <p id="avisoUsuarios" class="texto-suave"></p>
+            <div class="container-grafico container-grafico-baixo">
+                <canvas id="graficoUsuariosHorizontais"></canvas>
+            </div>
+        </section>
 
         <!-- Projetos Recentes -->
         <section>
