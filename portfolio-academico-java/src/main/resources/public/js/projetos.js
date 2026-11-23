@@ -5,8 +5,55 @@ const mensagem = document.getElementById("mensagem");
 const formProjeto = document.getElementById("formProjeto");
 const botaoSubmit = formProjeto.querySelector("button[type='submit']");
 
+const inputBuscaId = document.getElementById("buscaId");
+const btnBuscarId = document.getElementById("btnBuscarId");
+const btnLimparBusca = document.getElementById("btnLimparBusca");
+
 let idEmEdicao = null;
 let dataCriacaoEmEdicao = null;
+
+async function buscarProjetoPorId(id) {
+    const idNumero = Number(id);
+
+    if (!Number.isInteger(idNumero) || idNumero <= 0) {
+        mensagem.textContent = "Informe um ID válido: use apenas números inteiros maiores que zero (ex.: 1, 2, 3).";
+        return;
+    }
+
+    try {
+        mensagem.textContent = `Buscando projeto #${idNumero}...`;
+        const resposta = await fetch(`${API_URL}/${idNumero}`);
+
+        if (!resposta.ok) {
+            const msgErro = await extrairErroResposta(resposta, "Projeto não encontrado.");
+            throw new Error(msgErro);
+        }
+
+        const projeto = await resposta.json();
+        exibirProjetos(projeto ? [projeto] : []);
+        mensagem.textContent = `Projeto #${idNumero} encontrado.`;
+    } catch (erro) {
+        listaProjetos.replaceChildren();
+        mensagem.textContent = erro.message || "Erro ao buscar projeto por ID.";
+        console.error(erro);
+    }
+}
+
+btnBuscarId.addEventListener("click", () => {
+    buscarProjetoPorId(inputBuscaId.value.trim());
+});
+
+inputBuscaId.addEventListener("keydown", (evento) => {
+    if (evento.key === "Enter") {
+        evento.preventDefault();
+        buscarProjetoPorId(inputBuscaId.value.trim());
+    }
+});
+
+btnLimparBusca.addEventListener("click", () => {
+    inputBuscaId.value = "";
+    listarProjetos();
+});
 
 async function listarProjetos() {
     try {
