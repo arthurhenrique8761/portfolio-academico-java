@@ -11,6 +11,21 @@ const listaRecentes = document.getElementById("listaRecentes");
 
 const charts = {};
 
+function formatarDataBR(dataIso, fallback = "Sem prazo") {
+    if (!dataIso) {
+        return fallback;
+    }
+
+    const parteData = String(dataIso).split("T")[0];
+    const partes = parteData.split("-");
+    if (partes.length !== 3) {
+        return dataIso;
+    }
+
+    const [ano, mes, dia] = partes;
+    return `${dia}/${mes}/${ano}`;
+}
+
 function destruirGraficoSeExistir(chave) {
     if (charts[chave]) {
         charts[chave].destroy();
@@ -314,7 +329,7 @@ function renderizarRecentes(projetos) {
         titulo.textContent = `#${projeto.id} - ${projeto.nome}`;
 
         const meta = document.createElement("p");
-        meta.textContent = `Categoria: ${projeto.categoria} | Status: ${projeto.status} | Prazo: ${projeto.prazo || "Sem prazo"}`;
+        meta.textContent = `Categoria: ${projeto.categoria} | Status: ${projeto.status} | Prazo: ${formatarDataBR(projeto.prazo, "Sem prazo")}`;
 
         info.appendChild(titulo);
         info.appendChild(meta);

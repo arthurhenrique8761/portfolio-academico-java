@@ -13,6 +13,21 @@ const corpoTabelaRelatorio = document.getElementById("corpoTabelaRelatorio");
 let todosProjetos = [];
 let projetosFiltrados = [];
 
+function formatarDataBR(dataIso, fallback = "-") {
+    if (!dataIso) {
+        return fallback;
+    }
+
+    const parteData = String(dataIso).split("T")[0];
+    const partes = parteData.split("-");
+    if (partes.length !== 3) {
+        return dataIso;
+    }
+
+    const [ano, mes, dia] = partes;
+    return `${dia}/${mes}/${ano}`;
+}
+
 async function inicializarRelatorios() {
     try {
         mensagemRelatorio.textContent = "Carregando dados do relatório...";
@@ -118,7 +133,8 @@ function renderizarTabela() {
         tdStatus.appendChild(badgeStatus);
 
         const tdPrazo = document.createElement("td");
-        tdPrazo.textContent = projeto.prazo || "-";
+        tdPrazo.classList.add("coluna-data");
+        tdPrazo.textContent = formatarDataBR(projeto.prazo, "-");
 
         tr.appendChild(tdId);
         tr.appendChild(tdNome);
@@ -150,7 +166,7 @@ function exportarCsv() {
         escaparCsv(p.descricao),
         escaparCsv(p.categoria),
         escaparCsv(p.status),
-        escaparCsv(p.prazo || "")
+        escaparCsv(formatarDataBR(p.prazo, ""))
     ].join(";"));
 
     const conteudoCsv = "\uFEFF" + [cabecalho.join(";"), ...linhas].join("\n");
