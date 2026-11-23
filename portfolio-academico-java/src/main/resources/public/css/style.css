@@ -306,6 +306,10 @@ button {
     background-color: #fafafa;
 }
 
+.coluna-data {
+    white-space: nowrap;
+}
+
 .celula-vazia {
     text-align: center !important;
     color: #666;

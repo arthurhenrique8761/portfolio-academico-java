@@ -12,6 +12,21 @@ const btnLimparBusca = document.getElementById("btnLimparBusca");
 let idEmEdicao = null;
 let dataCriacaoEmEdicao = null;
 
+function formatarDataBR(dataIso, fallback = "Não definido") {
+    if (!dataIso) {
+        return fallback;
+    }
+
+    const parteData = String(dataIso).split("T")[0];
+    const partes = parteData.split("-");
+    if (partes.length !== 3) {
+        return dataIso;
+    }
+
+    const [ano, mes, dia] = partes;
+    return `${dia}/${mes}/${ano}`;
+}
+
 async function buscarProjetoPorId(id) {
     const idNumero = Number(id);
 
@@ -103,7 +118,7 @@ function exibirProjetos(projetos) {
         status.textContent = "Status: " + projeto.status;
 
         const prazo = document.createElement("p");
-        prazo.textContent = "Prazo: " + (projeto.prazo || "Não definido");
+        prazo.textContent = "Prazo: " + formatarDataBR(projeto.prazo, "Não definido");
 
         const botaoExcluir = document.createElement("button");
         botaoExcluir.type = "button";
