@@ -9,94 +9,91 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body>
-    <header>
-        <h1>Sistema de Projetos</h1>
-        <p>Visão geral e indicadores do portfólio</p>
-        <nav class="menu-navegacao">
+<body class="layout-lateral">
+    <aside class="menu-lateral">
+        <h2 class="menu-lateral-titulo">Sistema de Projetos</h2>
+        <nav class="menu-lateral-links">
             <a href="dashboard.html" class="ativo">Dashboard</a>
             <a href="projetos.html">Projetos</a>
             <a href="categorias.html">Categorias</a>
             <a href="relatorios.html">Relatórios</a>
         </nav>
-    </header>
+    </aside>
 
-    <main>
-        <p id="mensagemDashboard" class="mensagem-status"></p>
+    <div class="conteudo-lateral">
+        <header class="topo-pagina">
+            <h1>Sistema de Projetos</h1>
+            <p>Visão geral e indicadores do portfólio</p>
+        </header>
 
-        <!-- Dashboard 1 - Visão Geral (Cards Superiores) -->
-        <section class="grid-kpis">
-            <article class="kpi-card kpi-total">
-                <span class="kpi-numero" id="kpiTotal">0</span>
-                <span class="kpi-titulo">Total de Projetos</span>
-            </article>
+        <main class="main-sem-rolagem main-dashboard-grade">
+            <p id="mensagemDashboard" class="mensagem-status"></p>
 
-            <article class="kpi-card kpi-concluido">
-                <span class="kpi-numero" id="kpiConcluidos">0</span>
-                <span class="kpi-titulo">Projetos Concluídos</span>
-            </article>
+            <section class="grid-kpis dashboard-kpis-compacto">
+                <article class="kpi-card kpi-total">
+                    <span class="kpi-numero" id="kpiTotal">0</span>
+                    <span class="kpi-titulo">Total de Projetos</span>
+                </article>
 
-            <article class="kpi-card kpi-andamento">
-                <span class="kpi-numero" id="kpiAndamento">0</span>
-                <span class="kpi-titulo">Projetos Ativos</span>
-            </article>
+                <article class="kpi-card kpi-concluido">
+                    <span class="kpi-numero" id="kpiConcluidos">0</span>
+                    <span class="kpi-titulo">Projetos Concluídos</span>
+                </article>
 
-            <article class="kpi-card kpi-cancelado">
-                <span class="kpi-numero" id="kpiCancelados">0</span>
-                <span class="kpi-titulo">Projetos Cancelados</span>
-            </article>
-        </section>
+                <article class="kpi-card kpi-andamento">
+                    <span class="kpi-numero" id="kpiAndamento">0</span>
+                    <span class="kpi-titulo">Projetos Ativos</span>
+                </article>
 
-        <!-- Dashboard 2 (Pizza) e Dashboard 3 (Colunas/Barras) -->
-        <div class="grid-duplo">
-            <section>
-                <h2>Status dos Projetos</h2>
-                <div class="container-grafico">
-                    <canvas id="graficoStatusPizza"></canvas>
-                </div>
+                <article class="kpi-card kpi-cancelado">
+                    <span class="kpi-numero" id="kpiCancelados">0</span>
+                    <span class="kpi-titulo">Projetos Cancelados</span>
+                </article>
             </section>
 
-            <section>
-                <h2>Projetos por Categoria</h2>
-                <div class="container-grafico">
-                    <canvas id="graficoCategoriasColunas"></canvas>
-                </div>
-            </section>
-        </div>
+            <div class="dashboard-corpo-grade">
+                <div class="dashboard-graficos-coluna">
+                    <div class="grid-duplo dashboard-duplo-compacto">
+                        <section class="card-dashboard-compacto">
+                            <h2>Status dos Projetos</h2>
+                            <div class="container-grafico dashboard-grafico-compacto">
+                                <canvas id="graficoStatusPizza"></canvas>
+                            </div>
+                        </section>
 
-        <!-- Dashboard 4 (Linha) e Dashboard 5 (Rosca/Donut) -->
-        <div class="grid-duplo">
-            <section>
-                <h2>Evolução Mensal</h2>
-                <div class="container-grafico">
-                    <canvas id="graficoEvolucaoLinha"></canvas>
-                </div>
-            </section>
+                        <section class="card-dashboard-compacto">
+                            <h2>Projetos por Categoria</h2>
+                            <div class="container-grafico dashboard-grafico-compacto">
+                                <canvas id="graficoCategoriasColunas"></canvas>
+                            </div>
+                        </section>
+                    </div>
 
-            <section>
-                <h2>Cumprimento de Prazos</h2>
-                <div class="container-grafico">
-                    <canvas id="graficoPrazosDonut"></canvas>
-                </div>
-                <p id="legendaPrazos" class="legenda-centro"></p>
-            </section>
-        </div>
+                    <div class="grid-duplo dashboard-duplo-compacto">
+                        <section class="card-dashboard-compacto">
+                            <h2>Evolução Mensal</h2>
+                            <div class="container-grafico dashboard-grafico-compacto">
+                                <canvas id="graficoEvolucaoLinha"></canvas>
+                            </div>
+                        </section>
 
-        <!-- Dashboard 6 (Barras Horizontais - Usuários Mais Ativos) -->
-        <section>
-            <h2>Usuários Mais Ativos</h2>
-            <p id="avisoUsuarios" class="texto-suave"></p>
-            <div class="container-grafico container-grafico-baixo">
-                <canvas id="graficoUsuariosHorizontais"></canvas>
+                        <section class="card-dashboard-compacto">
+                            <h2>Cumprimento de Prazos</h2>
+                            <div class="container-grafico dashboard-grafico-prazos">
+                                <canvas id="graficoPrazosDonut"></canvas>
+                            </div>
+                            <p id="legendaPrazos" class="legenda-centro dashboard-legenda-compacta"></p>
+                        </section>
+                    </div>
+                </div>
+
+                <section class="card-dashboard-compacto dashboard-recentes-rolavel">
+                    <h2>Últimos Projetos Cadastrados</h2>
+                    <div id="listaRecentes" class="lista-recentes-scroll"></div>
+                </section>
             </div>
-        </section>
-
-        <!-- Projetos Recentes -->
-        <section>
-            <h2>Últimos Projetos Cadastrados</h2>
-            <div id="listaRecentes"></div>
-        </section>
-    </main>
+        </main>
+    </div>
 
     <script src="js/dashboard.js"></script>
 </body>

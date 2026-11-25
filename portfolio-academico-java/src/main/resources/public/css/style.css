@@ -453,3 +453,267 @@ button {
     margin-top: -6px;
     margin-bottom: 12px;
 }
+
+body.layout-lateral {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f4f4f4;
+}
+
+.menu-lateral {
+    width: 220px;
+    flex-shrink: 0;
+    background-color: #263238;
+    color: #ffffff;
+    padding: 24px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.menu-lateral-titulo {
+    margin: 0;
+    padding: 0 10px 14px;
+    font-size: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.menu-lateral-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu-lateral-links a {
+    color: #cfd8dc;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.menu-lateral-links a:hover,
+.menu-lateral-links a.ativo {
+    background-color: #37474f;
+    color: #ffffff;
+}
+
+.conteudo-lateral {
+    flex: 1;
+    min-width: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.topo-pagina {
+    background-color: #ffffff;
+    color: #222;
+    padding: 16px 24px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.topo-pagina h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.topo-pagina p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.main-sem-rolagem {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 18px 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-sem-rolagem section {
+    margin-bottom: 16px;
+}
+
+.main-sem-rolagem section:last-child {
+    margin-bottom: 0;
+}
+
+.secao-rolavel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#listaProjetos,
+#listaProjetosCategoria,
+.tabela-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.main-dashboard-rolavel {
+    overflow-y: auto;
+    gap: 16px;
+}
+
+.main-dashboard-rolavel section {
+    flex-shrink: 0;
+}
+
+.main-dashboard-rolavel .grid-duplo {
+    flex-shrink: 0;
+}
+
+.grade-projetos-lado-a-lado {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+}
+
+.grade-projetos-lado-a-lado section {
+    margin-bottom: 0;
+    min-height: 0;
+}
+
+.card-cadastro {
+    overflow-y: auto;
+}
+
+.card-listagem {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.card-listagem #listaProjetos {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+@media (max-width: 900px) {
+    .grade-projetos-lado-a-lado {
+        grid-template-columns: 1fr;
+    }
+}
+
+.main-dashboard-grade {
+    gap: 12px;
+    overflow: hidden;
+}
+
+.main-dashboard-grade .mensagem-status:empty {
+    display: none;
+}
+
+.dashboard-kpis-compacto {
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.dashboard-kpis-compacto .kpi-card {
+    padding: 10px 14px;
+    gap: 2px;
+}
+
+.dashboard-kpis-compacto .kpi-numero {
+    font-size: 22px;
+}
+
+.dashboard-kpis-compacto .kpi-titulo {
+    font-size: 12px;
+}
+
+.dashboard-corpo-grade {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(290px, 1fr);
+    gap: 14px;
+    align-items: stretch;
+}
+
+.dashboard-graficos-coluna {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow: hidden;
+}
+
+.dashboard-duplo-compacto {
+    gap: 14px;
+    flex: 1;
+    min-height: 0;
+}
+
+.card-dashboard-compacto {
+    padding: 12px 16px;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.card-dashboard-compacto h2 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.dashboard-grafico-compacto,
+.dashboard-grafico-prazos {
+    flex: 1;
+    min-height: 0;
+    height: auto !important;
+}
+
+.dashboard-legenda-compacta {
+    margin-top: 4px !important;
+    font-size: 12px !important;
+    flex-shrink: 0;
+}
+
+.dashboard-grafico-usuarios {
+    height: 76px !important;
+    flex-shrink: 0;
+}
+
+.dashboard-recentes-rolavel {
+    height: 100%;
+}
+
+.lista-recentes-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+@media (max-width: 1050px) {
+    .dashboard-corpo-grade {
+        grid-template-columns: 1fr;
+    }
+}

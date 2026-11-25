@@ -6,12 +6,14 @@ const kpiConcluidos = document.getElementById("kpiConcluidos");
 const kpiAndamento = document.getElementById("kpiAndamento");
 const kpiCancelados = document.getElementById("kpiCancelados");
 const legendaPrazos = document.getElementById("legendaPrazos");
-const avisoUsuarios = document.getElementById("avisoUsuarios");
 const listaRecentes = document.getElementById("listaRecentes");
 
-const charts = {};
+let graficoStatus = null;
+let graficoCategorias = null;
+let graficoEvolucao = null;
+let graficoPrazos = null;
 
-function formatarDataBR(dataIso, fallback = "Sem prazo") {
+function formatarDataBR(dataIso, fallback = "Não definido") {
     if (!dataIso) {
         return fallback;
     }
@@ -26,316 +28,291 @@ function formatarDataBR(dataIso, fallback = "Sem prazo") {
     return `${dia}/${mes}/${ano}`;
 }
 
-function destruirGraficoSeExistir(chave) {
-    if (charts[chave]) {
-        charts[chave].destroy();
-    }
+function normalizarStatus(status) {
+    return String(status || "").trim().toLowerCase();
 }
 
-async function carregarDashboard() {
-    try {
-        mensagemDashboard.textContent = "Atualizando indicadores e gráficos...";
-        const resposta = await fetch(API_URL);
-
-        if (!resposta.ok) {
-            throw new Error("Falha ao buscar dados da API.");
-        }
-
-        const projetos = await resposta.json();
-
-        atualizarKPIs(projetos);
-        renderizarGraficoStatusPizza(projetos);
-        renderizarGraficoCategoriasColunas(projetos);
-        renderizarGraficoEvolucaoLinha(projetos);
-        renderizarGraficoPrazosDonut(projetos);
-        renderizarGraficoUsuariosHorizontais(projetos);
-        renderizarRecentes(projetos);
-
-        mensagemDashboard.textContent = "";
-    } catch (erro) {
-        mensagemDashboard.textContent = "Não foi possível carregar os dados do dashboard.";
-        console.error(erro);
-    }
-}
-
-// Dashboard 1 - Visão Geral (Cards)
-function atualizarKPIs(projetos) {
+function atualizarKpis(projetos) {
     const total = projetos.length;
-
-    const concluidos = projetos.filter(p =>
-        (p.status || "").toLowerCase() === "concluído"
-    ).length;
-
+    const concluidos = projetos.filter(p => normalizarStatus(p.status) === "concluído").length;
     const ativos = projetos.filter(p => {
-        const s = (p.status || "").toLowerCase();
+        const s = normalizarStatus(p.status);
         return s === "em desenvolvimento" || s === "em andamento" || s === "planejado";
     }).length;
+    const cancelados = projetos.filter(p => normalizarStatus(p.status) === "cancelado").length;
 
-    const cancelados = projetos.filter(p =>
-        (p.status || "").toLowerCase() === "cancelado"
-    ).length;
-
-    kpiTotal.textContent = total;
-    kpiConcluidos.textContent = concluidos;
-    kpiAndamento.textContent = ativos;
-    kpiCancelados.textContent = cancelados;
+    if (kpiTotal) kpiTotal.textContent = total;
+    if (kpiConcluidos) kpiConcluidos.textContent = concluidos;
+    if (kpiAndamento) kpiAndamento.textContent = ativos;
+    if (kpiCancelados) kpiCancelados.textContent = cancelados;
 }
 
-// Dashboard 2 - Status dos Projetos (Pizza)
-function renderizarGraficoStatusPizza(projetos) {
-    destruirGraficoSeExistir("status");
+function destruirGrafico(instancia) {
+    if (instancia && typeof instancia.destroy === "function") {
+        instancia.destroy();
+    }
+}
 
-    const statusOrdem = ["Concluído", "Em Desenvolvimento", "Planejado", "Cancelado"];
-    const valores = statusOrdem.map(st =>
-        projetos.filter(p => (p.status || "").toLowerCase() === st.toLowerCase()).length
-    );
+function renderizarGraficoStatus(projetos) {
+    const canvas = document.getElementById("graficoStatusPizza");
+    if (!canvas || typeof Chart === "undefined") return;
 
-    const ctx = document.getElementById("graficoStatusPizza");
-    charts.status = new Chart(ctx, {
+    destruirGrafico(graficoStatus);
+
+    const rotulos = ["Concluído", "Em Desenvolvimento", "Planejado", "Cancelado"];
+    const contagens = [
+        projetos.filter(p => normalizarStatus(p.status) === "concluído").length,
+        projetos.filter(p => normalizarStatus(p.status) === "em desenvolvimento").length,
+        projetos.filter(p => normalizarStatus(p.status) === "planejado").length,
+        projetos.filter(p => normalizarStatus(p.status) === "cancelado").length
+    ];
+
+    graficoStatus = new Chart(canvas, {
         type: "pie",
         data: {
-            labels: statusOrdem,
+            labels: rotulos,
             datasets: [{
-                data: valores,
-                backgroundColor: ["#2e7d32", "#ed6c02", "#1976d2", "#c62828"],
-                borderWidth: 2,
-                borderColor: "#ffffff"
+                data: contagens,
+                backgroundColor: ["#2e7d32", "#ed6c02", "#1976d2", "#c62828"]
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: "bottom" }
+                legend: {
+                    position: "bottom"
+                }
             }
         }
     });
 }
 
-// Dashboard 3 - Projetos por Categoria (Colunas / Barras Verticais)
-function renderizarGraficoCategoriasColunas(projetos) {
-    destruirGraficoSeExistir("categorias");
+function renderizarGraficoCategorias(projetos) {
+    const canvas = document.getElementById("graficoCategoriasColunas");
+    if (!canvas || typeof Chart === "undefined") return;
 
-    const categoriasOrdem = ["Web", "Software", "Mobile", "Desktop"];
-    const valores = categoriasOrdem.map(cat =>
-        projetos.filter(p => (p.categoria || "").toLowerCase() === cat.toLowerCase()).length
-    );
+    destruirGrafico(graficoCategorias);
 
-    const ctx = document.getElementById("graficoCategoriasColunas");
-    charts.categorias = new Chart(ctx, {
+    const categoriasPadrao = ["Web", "Software", "Mobile", "Desktop"];
+    const mapa = new Map();
+    categoriasPadrao.forEach(cat => mapa.set(cat, 0));
+
+    projetos.forEach(p => {
+        const cat = String(p.categoria || "Outros").trim();
+        mapa.set(cat, (mapa.get(cat) || 0) + 1);
+    });
+
+    const labels = Array.from(mapa.keys());
+    const valores = Array.from(mapa.values());
+
+    graficoCategorias = new Chart(canvas, {
         type: "bar",
         data: {
-            labels: categoriasOrdem,
+            labels,
             datasets: [{
-                label: "Quantidade de Projetos",
+                label: "Projetos",
                 data: valores,
-                backgroundColor: ["#1976d2", "#263238", "#00897b", "#5e35b1"],
-                borderRadius: 6
+                backgroundColor: ["#1976d2", "#263238", "#00796b", "#7b1fa2"]
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: {
+                    display: false
+                }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0 }
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    }
                 }
             }
         }
     });
 }
 
-// Dashboard 4 - Evolução Mensal (Linha)
-function renderizarGraficoEvolucaoLinha(projetos) {
-    destruirGraficoSeExistir("evolucao");
+function renderizarGraficoEvolucao(projetos) {
+    const canvas = document.getElementById("graficoEvolucaoLinha");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    destruirGrafico(graficoEvolucao);
 
     const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    const contagens = Array(12).fill(0);
+    const contagemMeses = new Array(12).fill(0);
 
     projetos.forEach(p => {
-        if (p.dataCriacao) {
-            const partes = String(p.dataCriacao).split("-");
-            if (partes.length >= 2) {
-                const mesIdx = parseInt(partes[1], 10) - 1;
-                if (mesIdx >= 0 && mesIdx < 12) {
-                    contagens[mesIdx]++;
-                }
+        const baseData = p.dataCriacao || p.prazo;
+        if (!baseData) return;
+
+        const parteData = String(baseData).split("T")[0];
+        const partes = parteData.split("-");
+        if (partes.length >= 2) {
+            const indiceMes = Number(partes[1]) - 1;
+            if (indiceMes >= 0 && indiceMes < 12) {
+                contagemMeses[indiceMes] += 1;
             }
         }
     });
 
-    const ctx = document.getElementById("graficoEvolucaoLinha");
-    charts.evolucao = new Chart(ctx, {
+    graficoEvolucao = new Chart(canvas, {
         type: "line",
         data: {
             labels: meses,
             datasets: [{
                 label: "Projetos Criados",
-                data: contagens,
+                data: contagemMeses,
                 borderColor: "#1976d2",
-                backgroundColor: "rgba(25, 118, 210, 0.15)",
+                backgroundColor: "rgba(25, 118, 210, 0.14)",
                 fill: true,
-                tension: 0.3,
-                pointRadius: 4
+                tension: 0.35
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: "bottom" }
+                legend: {
+                    position: "bottom"
+                }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { precision: 0 }
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    }
                 }
             }
         }
     });
 }
 
-// Dashboard 5 - Cumprimento de Prazos (Rosca / Donut)
-function renderizarGraficoPrazosDonut(projetos) {
-    destruirGraficoSeExistir("prazos");
+function renderizarGraficoPrazos(projetos) {
+    const canvas = document.getElementById("graficoPrazosDonut");
+    if (!canvas || typeof Chart === "undefined") return;
 
-    const comPrazo = projetos.filter(p => Boolean(p.prazo));
-    const hoje = new Date().toISOString().slice(0, 10);
+    destruirGrafico(graficoPrazos);
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
 
     let noPrazo = 0;
     let atrasados = 0;
 
-    comPrazo.forEach(p => {
-        const concluido = (p.status || "").toLowerCase() === "concluído";
-        const cancelado = (p.status || "").toLowerCase() === "cancelado";
-        if (!concluido && !cancelado && p.prazo < hoje) {
-            atrasados++;
+    projetos.forEach(p => {
+        if (!p.prazo) {
+            noPrazo += 1;
+            return;
+        }
+
+        const parteData = String(p.prazo).split("T")[0];
+        const partes = parteData.split("-");
+        if (partes.length !== 3) {
+            noPrazo += 1;
+            return;
+        }
+
+        const dataPrazo = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+        const concluido = normalizarStatus(p.status) === "concluído";
+
+        if (!concluido && dataPrazo < hoje) {
+            atrasados += 1;
         } else {
-            noPrazo++;
+            noPrazo += 1;
         }
     });
 
-    if (comPrazo.length === 0) {
-        legendaPrazos.textContent = "Nenhum projeto possui prazo definido ainda.";
-    } else {
-        const percNoPrazo = Math.round((noPrazo / comPrazo.length) * 100);
-        const percAtrasados = 100 - percNoPrazo;
-        legendaPrazos.textContent = `No prazo: ${noPrazo} (${percNoPrazo}%) | Atrasados: ${atrasados} (${percAtrasados}%)`;
-    }
+    const totalAvaliado = noPrazo + atrasados;
+    const percNoPrazo = totalAvaliado > 0 ? Math.round((noPrazo / totalAvaliado) * 100) : 0;
+    const percAtrasados = totalAvaliado > 0 ? Math.round((atrasados / totalAvaliado) * 100) : 0;
 
-    const ctx = document.getElementById("graficoPrazosDonut");
-    charts.prazos = new Chart(ctx, {
+    graficoPrazos = new Chart(canvas, {
         type: "doughnut",
         data: {
             labels: ["No prazo", "Atrasados"],
             datasets: [{
-                data: comPrazo.length > 0 ? [noPrazo, atrasados] : [0, 0],
-                backgroundColor: ["#2e7d32", "#c62828"],
-                borderWidth: 2,
-                borderColor: "#ffffff"
+                data: [noPrazo, atrasados],
+                backgroundColor: ["#2e7d32", "#c62828"]
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: "62%",
             plugins: {
-                legend: { position: "bottom" }
-            }
-        }
-    });
-}
-
-// Dashboard 6 - Usuários Mais Ativos (Barras Horizontais)
-function renderizarGraficoUsuariosHorizontais(projetos) {
-    destruirGraficoSeExistir("usuarios");
-
-    const contagemPorUsuario = {};
-    projetos.forEach(p => {
-        const u = (p.usuario || p.responsavel || "").trim();
-        if (u) {
-            contagemPorUsuario[u] = (contagemPorUsuario[u] || 0) + 1;
-        }
-    });
-
-    const entradas = Object.entries(contagemPorUsuario).sort((a, b) => b[1] - a[1]);
-
-    let labels;
-    let dados;
-
-    if (entradas.length > 0) {
-        avisoUsuarios.textContent = "";
-        labels = entradas.map(e => e[0]);
-        dados = entradas.map(e => e[1]);
-    } else {
-        avisoUsuarios.textContent = "Pré-visualização (aguardando integração de login de usuários):";
-        labels = ["José", "Maria", "João"];
-        dados = [30, 20, 15];
-    }
-
-    const ctx = document.getElementById("graficoUsuariosHorizontais");
-    charts.usuarios = new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: labels,
-            datasets: [{
-                label: "Projetos",
-                data: dados,
-                backgroundColor: "#37474f",
-                borderRadius: 6
-            }]
-        },
-        options: {
-            indexAxis: "y",
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: { precision: 0 }
+                legend: {
+                    position: "bottom"
                 }
             }
         }
     });
+
+    if (legendaPrazos) {
+        legendaPrazos.textContent = `No prazo: ${noPrazo} (${percNoPrazo}%) | Atrasados: ${atrasados} (${percAtrasados}%)`;
+    }
 }
 
 function renderizarRecentes(projetos) {
+    if (!listaRecentes) return;
     listaRecentes.replaceChildren();
 
-    if (projetos.length === 0) {
+    if (!Array.isArray(projetos) || projetos.length === 0) {
         const vazio = document.createElement("p");
-        vazio.textContent = "Nenhum projeto cadastrado até o momento.";
+        vazio.textContent = "Nenhum projeto cadastrado.";
         listaRecentes.appendChild(vazio);
         return;
     }
 
-    const recentes = [...projetos]
-        .sort((a, b) => b.id - a.id)
-        .slice(0, 5);
+    const ordenados = [...projetos].sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 
-    recentes.forEach(projeto => {
-        const card = document.createElement("article");
-        card.classList.add("projeto", "projeto-resumo");
+    ordenados.forEach(projeto => {
+        const item = document.createElement("article");
+        item.classList.add("projeto");
 
-        const info = document.createElement("div");
         const titulo = document.createElement("h3");
         titulo.textContent = `#${projeto.id} - ${projeto.nome}`;
 
         const meta = document.createElement("p");
-        meta.textContent = `Categoria: ${projeto.categoria} | Status: ${projeto.status} | Prazo: ${formatarDataBR(projeto.prazo, "Sem prazo")}`;
+        meta.textContent = `Categoria: ${projeto.categoria} | Status: ${projeto.status} | Prazo: ${formatarDataBR(projeto.prazo, "Não definido")}`;
 
-        info.appendChild(titulo);
-        info.appendChild(meta);
-        card.appendChild(info);
-        listaRecentes.appendChild(card);
+        item.appendChild(titulo);
+        item.appendChild(meta);
+        listaRecentes.appendChild(item);
     });
+}
+
+async function carregarDashboard() {
+    try {
+        if (mensagemDashboard) {
+            mensagemDashboard.textContent = "";
+        }
+
+        const resposta = await fetch(API_URL);
+        if (!resposta.ok) {
+            throw new Error("Erro ao carregar dados do dashboard.");
+        }
+
+        const projetos = await resposta.json();
+        const lista = Array.isArray(projetos) ? projetos : [];
+
+        atualizarKpis(lista);
+        renderizarGraficoStatus(lista);
+        renderizarGraficoCategorias(lista);
+        renderizarGraficoEvolucao(lista);
+        renderizarGraficoPrazos(lista);
+        renderizarRecentes(lista);
+    } catch (erro) {
+        if (mensagemDashboard) {
+            mensagemDashboard.textContent = "Não foi possível carregar os indicadores do dashboard.";
+        }
+        console.error(erro);
+    }
 }
 
 carregarDashboard();

@@ -8,36 +8,40 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
-    <header>
-        <h1>Sistema de Projetos</h1>
-        <p>Exploração e filtragem de projetos por categoria</p>
-        <nav class="menu-navegacao">
+<body class="layout-lateral">
+    <aside class="menu-lateral">
+        <h2 class="menu-lateral-titulo">Sistema de Projetos</h2>
+        <nav class="menu-lateral-links">
             <a href="dashboard.html">Dashboard</a>
             <a href="projetos.html">Projetos</a>
             <a href="categorias.html" class="ativo">Categorias</a>
             <a href="relatorios.html">Relatórios</a>
         </nav>
-    </header>
+    </aside>
 
-    <main>
-        <p id="mensagemCategorias" class="mensagem-status"></p>
+    <div class="conteudo-lateral">
+        <header class="topo-pagina">
+            <h1>Sistema de Projetos</h1>
+            <p>Exploração e filtragem de projetos por categoria</p>
+        </header>
 
-        <!-- Cartões de Categorias -->
-        <section>
-            <h2>Filtrar por Categoria</h2>
-            <div id="gridCategorias" class="grid-categorias"></div>
-        </section>
+        <main class="main-sem-rolagem">
+            <p id="mensagemCategorias" class="mensagem-status"></p>
 
-        <!-- Lista de Projetos da Categoria Selecionada -->
-        <section>
-            <div class="cabecalho-secao">
-                <h2 id="tituloListagemCategoria">Todos os Projetos</h2>
-                <span id="contadorCategoria" class="badge-contagem">0 projeto(s)</span>
-            </div>
-            <div id="listaProjetosCategoria"></div>
-        </section>
-    </main>
+            <section>
+                <h2>Filtrar por Categoria</h2>
+                <div id="gridCategorias" class="grid-categorias"></div>
+            </section>
+
+            <section class="secao-rolavel">
+                <div class="cabecalho-secao">
+                    <h2 id="tituloListagemCategoria">Todos os Projetos</h2>
+                    <span id="contadorCategoria" class="badge-contagem">0 projeto(s)</span>
+                </div>
+                <div id="listaProjetosCategoria"></div>
+            </section>
+        </main>
+    </div>
 
     <script src="js/categorias.js"></script>
 </body>
