@@ -1,6 +1,7 @@
 package br.com.arthurhenrique.view;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -29,6 +30,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -36,11 +38,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -90,11 +93,15 @@ public class TelaPrincipal extends JFrame {
 
     private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    // Subtítulo do cabeçalho para cada aba (na ordem das abas)
+    private static final Color COR_MENU_ATIVO = new Color(55, 71, 79);
+
+    // Páginas do menu lateral e subtítulo do cabeçalho de cada uma (mesma ordem)
+    private static final String[] PAGINAS = { "Dashboard", "Projetos", "Categorias", "Relatórios" };
+    private static final int PAGINA_PROJETOS = 1;
     private static final String[] SUBTITULOS = {
-            "Cadastro, edição e gestão dos projetos do portfólio",
-            "Exploração e filtragem de projetos por categoria",
             "Visão geral e indicadores do portfólio",
+            "Gerenciamento de projetos e portfólio",
+            "Exploração e filtragem de projetos por categoria",
             "Relatórios detalhados, filtros e exportação de dados"
     };
 
@@ -109,12 +116,15 @@ public class TelaPrincipal extends JFrame {
     private boolean atualizandoTabela = false;
     private boolean erroCargaExibido = false;
 
-    // Cabeçalho
+    // Cabeçalho e navegação
     private JLabel subtituloCabecalho;
+    private List<JButton> botoesMenu;
+    private CardLayout layoutPaginas;
+    private JPanel painelPaginas;
 
     // Aba Projetos
     private JTextField campoNome;
-    private JTextField campoDescricao;
+    private JTextArea campoDescricao;
     private JTextField campoPrazo;
     private JComboBox<String> comboCategoria;
     private JComboBox<String> comboStatus;
@@ -186,50 +196,114 @@ public class TelaPrincipal extends JFrame {
         criarFormulario();
         criarTabelaProjetos();
 
-        add(criarCabecalho(), BorderLayout.NORTH);
-        add(criarAbas(), BorderLayout.CENTER);
+        JPanel areaPrincipal = new JPanel(new BorderLayout());
+        areaPrincipal.setBackground(COR_FUNDO);
+        areaPrincipal.add(criarCabecalho(), BorderLayout.NORTH);
+        areaPrincipal.add(criarPaginas(), BorderLayout.CENTER);
+
+        add(criarMenuLateral(), BorderLayout.WEST);
+        add(areaPrincipal, BorderLayout.CENTER);
+
+        mostrarPagina(PAGINA_PROJETOS);
 
         revalidate();
         repaint();
     }
 
+    private JPanel criarMenuLateral() {
+        JPanel menu = new JPanel();
+        menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
+        menu.setBackground(COR_TOPO);
+        menu.setPreferredSize(new Dimension(214, 0));
+
+        JLabel titulo = new JLabel("<html>Sistema de<br>Projetos</html>");
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titulo.setForeground(Color.WHITE);
+        titulo.setBorder(new EmptyBorder(20, 20, 16, 20));
+        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel separador = new JPanel();
+        separador.setBackground(new Color(69, 90, 100));
+        separador.setPreferredSize(new Dimension(1, 1));
+        separador.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        separador.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel navegacao = new JPanel();
+        navegacao.setLayout(new BoxLayout(navegacao, BoxLayout.Y_AXIS));
+        navegacao.setBackground(COR_TOPO);
+        navegacao.setBorder(new EmptyBorder(14, 8, 0, 8));
+        navegacao.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        botoesMenu = new ArrayList<>();
+        for (int i = 0; i < PAGINAS.length; i++) {
+            final int indice = i;
+            JButton btn = new JButton(PAGINAS[i]);
+            btn.setFont(FONTE_BOTAO);
+            btn.setHorizontalAlignment(SwingConstants.LEFT);
+            btn.setFocusPainted(false);
+            btn.setOpaque(true);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btn.setBorder(new EmptyBorder(10, 12, 10, 12));
+            btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+            btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+            btn.addActionListener(e -> mostrarPagina(indice));
+            botoesMenu.add(btn);
+            navegacao.add(btn);
+            navegacao.add(Box.createVerticalStrut(4));
+        }
+
+        menu.add(titulo);
+        menu.add(separador);
+        menu.add(navegacao);
+        return menu;
+    }
+
     private JPanel criarCabecalho() {
         JPanel topo = new JPanel();
         topo.setLayout(new BoxLayout(topo, BoxLayout.Y_AXIS));
-        topo.setBackground(COR_TOPO);
-        topo.setBorder(new EmptyBorder(20, 24, 16, 24));
+        topo.setBackground(COR_CARD);
+        topo.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, COR_BORDA),
+                new EmptyBorder(14, 24, 12, 24)));
 
         JLabel titulo = new JLabel("Sistema de Projetos");
         titulo.setFont(FONTE_TITULO);
-        titulo.setForeground(Color.WHITE);
-        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titulo.setForeground(COR_TEXTO);
+        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        subtituloCabecalho = new JLabel(SUBTITULOS[0]);
+        subtituloCabecalho = new JLabel(SUBTITULOS[PAGINA_PROJETOS]);
         subtituloCabecalho.setFont(FONTE_SUBTITULO);
-        subtituloCabecalho.setForeground(new Color(207, 216, 220));
-        subtituloCabecalho.setAlignmentX(Component.CENTER_ALIGNMENT);
+        subtituloCabecalho.setForeground(COR_MUTED);
+        subtituloCabecalho.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         topo.add(titulo);
-        topo.add(Box.createVerticalStrut(4));
+        topo.add(Box.createVerticalStrut(2));
         topo.add(subtituloCabecalho);
         return topo;
     }
 
-    private JPanel criarAbas() {
-        JTabbedPane abas = new JTabbedPane();
-        abas.setFont(FONTE_PADRAO);
-        abas.setBackground(COR_FUNDO);
-        abas.addTab("Projetos", criarAbaProjetos());
-        abas.addTab("Categorias", criarAbaCategorias());
-        abas.addTab("Dashboard", criarAbaDashboard());
-        abas.addTab("Relatórios", criarAbaRelatorios());
+    private JPanel criarPaginas() {
+        layoutPaginas = new CardLayout();
+        painelPaginas = new JPanel(layoutPaginas);
+        painelPaginas.setBackground(COR_FUNDO);
 
-        abas.addChangeListener(e -> subtituloCabecalho.setText(SUBTITULOS[abas.getSelectedIndex()]));
+        painelPaginas.add(criarAbaDashboard(), PAGINAS[0]);
+        painelPaginas.add(criarAbaProjetos(), PAGINAS[1]);
+        painelPaginas.add(criarAbaCategorias(), PAGINAS[2]);
+        painelPaginas.add(criarAbaRelatorios(), PAGINAS[3]);
+        return painelPaginas;
+    }
 
-        JPanel painelConteudo = new JPanel(new BorderLayout());
-        painelConteudo.setBackground(COR_FUNDO);
-        painelConteudo.add(abas, BorderLayout.CENTER);
-        return painelConteudo;
+    private void mostrarPagina(int indice) {
+        layoutPaginas.show(painelPaginas, PAGINAS[indice]);
+        subtituloCabecalho.setText(SUBTITULOS[indice]);
+
+        for (int i = 0; i < botoesMenu.size(); i++) {
+            JButton btn = botoesMenu.get(i);
+            boolean ativo = i == indice;
+            btn.setBackground(ativo ? COR_MENU_ATIVO : COR_TOPO);
+            btn.setForeground(ativo ? Color.WHITE : new Color(207, 216, 220));
+        }
     }
 
     public void criarEventos() {
@@ -245,7 +319,12 @@ public class TelaPrincipal extends JFrame {
 
     private void criarFormulario() {
         campoNome = new JTextField(22);
-        campoDescricao = new JTextField(30);
+        campoDescricao = new JTextArea(4, 22);
+        campoDescricao.setLineWrap(true);
+        campoDescricao.setWrapStyleWord(true);
+        campoDescricao.setFont(FONTE_PADRAO);
+        campoDescricao.setForeground(COR_TEXTO);
+        campoDescricao.setBorder(new EmptyBorder(6, 10, 6, 10));
         campoPrazo = new JTextField(10);
         campoPrazo.setToolTipText("AAAA-MM-DD ou DD/MM/AAAA");
 
@@ -258,7 +337,6 @@ public class TelaPrincipal extends JFrame {
         botaoLimpar = new JButton("Limpar");
 
         estilizarCampo(campoNome);
-        estilizarCampo(campoDescricao);
         estilizarCampo(campoPrazo);
         estilizarCombo(comboCategoria);
         estilizarCombo(comboStatus);
@@ -289,50 +367,63 @@ public class TelaPrincipal extends JFrame {
         JScrollPane scrollTabela = new JScrollPane(tabela);
         estilizarTabela(tabela, scrollTabela);
 
-        JPanel linha1 = criarLinha(6);
-        linha1.add(criarRotulo("Nome:"));
-        linha1.add(campoNome);
-        linha1.add(criarRotulo("Categoria:"));
-        linha1.add(comboCategoria);
-        linha1.add(criarRotulo("Status:"));
-        linha1.add(comboStatus);
+        JScrollPane scrollDescricao = new JScrollPane(campoDescricao);
+        scrollDescricao.setBorder(BorderFactory.createLineBorder(COR_BORDA, 1, true));
+        scrollDescricao.setPreferredSize(new Dimension(300, 90));
 
-        JPanel linha2 = criarLinha(6);
-        linha2.add(criarRotulo("Descrição:"));
-        linha2.add(campoDescricao);
-        linha2.add(criarRotulo("Prazo:"));
-        linha2.add(campoPrazo);
+        // Coluna esquerda: formulário em campos empilhados
+        JPanel campos = new JPanel();
+        campos.setLayout(new BoxLayout(campos, BoxLayout.Y_AXIS));
+        campos.setBackground(COR_CARD);
+        campos.add(criarTituloSecao("Cadastrar projeto"));
+        campos.add(Box.createVerticalStrut(14));
+        adicionarCampo(campos, "Nome:", campoNome);
+        adicionarCampo(campos, "Descrição:", scrollDescricao);
+        adicionarCampo(campos, "Categoria:", comboCategoria);
+        adicionarCampo(campos, "Status:", comboStatus);
+        adicionarCampo(campos, "Prazo (opcional):", campoPrazo);
 
-        JPanel linhaBotoes = criarLinha(8);
-        linhaBotoes.add(botaoCadastrar);
-        linhaBotoes.add(botaoAlterar);
-        linhaBotoes.add(botaoExcluir);
-        linhaBotoes.add(botaoLimpar);
-
-        JPanel painelFormulario = new JPanel();
-        painelFormulario.setLayout(new BoxLayout(painelFormulario, BoxLayout.Y_AXIS));
-        painelFormulario.setBackground(COR_CARD);
-        painelFormulario.add(criarTituloSecao("Cadastrar / Editar Projeto"));
-        painelFormulario.add(Box.createVerticalStrut(6));
-        painelFormulario.add(linha1);
-        painelFormulario.add(linha2);
-        painelFormulario.add(linhaBotoes);
+        JPanel botoes = new JPanel(new GridLayout(2, 2, 8, 8));
+        botoes.setBackground(COR_CARD);
+        botoes.setAlignmentX(Component.LEFT_ALIGNMENT);
+        botoes.add(botaoCadastrar);
+        botoes.add(botaoAlterar);
+        botoes.add(botaoExcluir);
+        botoes.add(botaoLimpar);
+        botoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, botoes.getPreferredSize().height));
+        campos.add(botoes);
 
         JPanel cardFormulario = criarCard();
         cardFormulario.setLayout(new BorderLayout());
-        cardFormulario.add(painelFormulario, BorderLayout.CENTER);
-        cardFormulario.setMaximumSize(new Dimension(Integer.MAX_VALUE, cardFormulario.getPreferredSize().height));
+        cardFormulario.setPreferredSize(new Dimension(400, 0));
+        cardFormulario.add(campos, BorderLayout.NORTH);
 
+        // Coluna direita: lista de projetos
         JPanel cardTabela = criarCard();
         cardTabela.setLayout(new BorderLayout(0, 10));
-        cardTabela.add(criarTituloSecao("Projetos Cadastrados"), BorderLayout.NORTH);
+        cardTabela.add(criarTituloSecao("Projetos cadastrados"), BorderLayout.NORTH);
         cardTabela.add(scrollTabela, BorderLayout.CENTER);
 
-        JPanel aba = criarPainelAba();
-        aba.add(cardFormulario);
-        aba.add(Box.createVerticalStrut(16));
-        aba.add(cardTabela);
+        JPanel aba = new JPanel(new BorderLayout(20, 0));
+        aba.setBackground(COR_FUNDO);
+        aba.setBorder(new EmptyBorder(20, 24, 20, 24));
+        aba.add(cardFormulario, BorderLayout.WEST);
+        aba.add(cardTabela, BorderLayout.CENTER);
         return aba;
+    }
+
+    /** Adiciona "rótulo acima, campo abaixo" ocupando toda a largura do painel. */
+    private void adicionarCampo(JPanel painel, String rotulo, JComponent componente) {
+        JLabel label = criarRotulo(rotulo);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        componente.setAlignmentX(Component.LEFT_ALIGNMENT);
+        componente.setMaximumSize(new Dimension(Integer.MAX_VALUE, componente.getPreferredSize().height));
+
+        painel.add(label);
+        painel.add(Box.createVerticalStrut(4));
+        painel.add(componente);
+        painel.add(Box.createVerticalStrut(12));
     }
 
     // =====================================================================
