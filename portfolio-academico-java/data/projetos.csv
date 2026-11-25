@@ -1,9 +1,9 @@
-id;nome;descricao;categoria;status;dataCriacao;prazo
-1;Sistema Acadêmico;Portal de matrículas, notas e frequência para alunos e professores;Web;Concluído;2026-08-10;2026-10-15
-2;API Rest Estacionamento;Serviço backend em Java com Spring Boot e validação de vagas;Software;Em Desenvolvimento;2026-09-03;2026-12-10
-3;App Mobile Farmácia;Aplicativo mobile para consulta de medicamentos e retirada em loja;Mobile;Em Desenvolvimento;2026-09-18;2026-12-20
+id;nome;descricao;categoria;status;dataCriacao;prazo;usuarioLogin
+1;Sistema Acadêmico;Portal de matrículas, notas e frequência para alunos e professores;Web;Concluído;2026-08-10;2026-10-15;
+2;API Rest Estacionamento;Serviço backend em Java com Spring Boot e validação de vagas;Software;Em Desenvolvimento;2026-09-03;2026-12-10;
+3;App Mobile Farmácia;Aplicativo mobile para consulta de medicamentos e retirada em loja;Mobile;Em Desenvolvimento;2026-09-18;2026-12-20;
 4;Gestão de Estoque Local;Aplicação desktop para controle de inventário e movimentação de itens;Desktop;Planejado;2026-09-03;2026-10-05;
-5;Dashboard de Qualidade;Painel web de métricas, auditoria e acompanhamento de prazos;Web;Concluído;2026-10-14;2026-11-10
-6;Validador de CSV Corporativo;Ferramenta desktop para conferência de lotes e integridade de dados;Desktop;Planejado;2026-10-28;2027-01-15
-7;Módulo de Notificações;Serviço de software para envio de alertas e eventos do sistema;Software;Cancelado;2026-11-02;2026-11-30
-8;Portal de Chamados TI;Sistema web para abertura, triagem e resolução de solicitações;Web;Em Desenvolvimento;2026-11-12;2026-12-28
+5;Dashboard de Qualidade;Painel web de métricas, auditoria e acompanhamento de prazos;Web;Concluído;2026-10-14;2026-11-10;
+6;Validador de CSV Corporativo;Ferramenta desktop para conferência de lotes e integridade de dados;Desktop;Planejado;2026-10-28;2027-01-15;
+7;Módulo de Notificações;Serviço de software para envio de alertas e eventos do sistema;Software;Cancelado;2026-11-02;2026-11-30;
+8;Teste;12312323123;Software;Planejado;2026-11-25;2026-11-28;efihm

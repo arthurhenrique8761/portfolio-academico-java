@@ -178,6 +178,10 @@ public class ProjetoService {
             projetoAtualizado.setDataCriacao(projeto.getDataCriacao());
         }
 
+        if (projetoAtualizado.getUsuarioLogin() == null || projetoAtualizado.getUsuarioLogin().isBlank()) {
+            projetoAtualizado.setUsuarioLogin(projeto.getUsuarioLogin());
+        }
+
         validarProjeto(projetoAtualizado, true, projeto.getId());
 
         projeto.setNome(projetoAtualizado.getNome());
@@ -186,6 +190,7 @@ public class ProjetoService {
         projeto.setStatus(projetoAtualizado.getStatus());
         projeto.setDataCriacao(projetoAtualizado.getDataCriacao());
         projeto.setPrazo(projetoAtualizado.getPrazo());
+        projeto.setUsuarioLogin(projetoAtualizado.getUsuarioLogin());
 
         return true;
     }

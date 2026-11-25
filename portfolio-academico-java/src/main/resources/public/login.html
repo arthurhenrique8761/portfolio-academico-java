@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Projetos</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="tela-login-body">
+    <main class="login-card">
+        <div class="login-cabecalho">
+            <h1>Sistema de Projetos</h1>
+            <p>Entre com suas credenciais para acessar</p>
+        </div>
+
+        <form id="formLogin" class="login-form">
+            <label for="usuario">Usuário</label>
+            <input type="text" id="usuario" name="usuario" autocomplete="username" placeholder="Ex.: admin" required>
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" name="senha" autocomplete="current-password"
+                placeholder="Digite sua senha" required>
+
+            <p id="mensagemLogin" class="mensagem-login" aria-live="polite"></p>
+
+            <button type="submit" id="btnEntrar">Entrar</button>
+        </form>
+        <p class="link-secundario-login">
+            Não tem conta? <a href="cadastro.html">Cadastre-se</a>
+        </p>
+    </main>
+
+    <script src="js/login.js"></script>
+</body>
+
+</html>

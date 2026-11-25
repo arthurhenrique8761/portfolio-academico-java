@@ -12,6 +12,8 @@ public class Projeto {
     private LocalDate dataCriacao;
     private LocalDate prazo;
 
+    private String usuarioLogin;
+
     public Projeto() {
         this.dataCriacao = LocalDate.now();
     }
@@ -101,6 +103,14 @@ public class Projeto {
 
     public void setPrazo(LocalDate prazo) {
         this.prazo = prazo;
+    }
+
+    public String getUsuarioLogin() {
+        return usuarioLogin;
+    }
+
+    public void setUsuarioLogin(String usuarioLogin) {
+        this.usuarioLogin = usuarioLogin;
     }
 
     @Override
