@@ -23,11 +23,12 @@ public class ProjetoCSV {
         }
 
         List<String> linhas = new ArrayList<>();
-        linhas.add("id;nome;descricao;categoria;status;dataCriacao;prazo");
+        linhas.add("id;nome;descricao;categoria;status;dataCriacao;prazo;usuarioLogin");
 
         for (Projeto projeto : projetos) {
             String dataCriacaoStr = projeto.getDataCriacao() != null ? projeto.getDataCriacao().toString() : "";
             String prazoStr = projeto.getPrazo() != null ? projeto.getPrazo().toString() : "";
+            String usuarioLogin = sanitizarCampo(projeto.getUsuarioLogin());
 
             String linha = projeto.getId() + ";"
                     + sanitizarCampo(projeto.getNome()) + ";"
@@ -35,7 +36,8 @@ public class ProjetoCSV {
                     + sanitizarCampo(projeto.getCategoria()) + ";"
                     + sanitizarCampo(projeto.getStatus()) + ";"
                     + dataCriacaoStr + ";"
-                    + prazoStr;
+                    + prazoStr + ";"
+                    + usuarioLogin;
 
             linhas.add(linha);
         }
@@ -72,7 +74,12 @@ public class ProjetoCSV {
                     ? ProjetoService.parseDataFlexivel(dados[6])
                     : null;
 
+            String usuarioLogin = (dados.length > 7 && !dados[7].isBlank())
+                    ? dados[7].trim()
+                    : "";
+
             Projeto projeto = new Projeto(id, nome, descricao, categoria, status, dataCriacao, prazo);
+            projeto.setUsuarioLogin(usuarioLogin);
             projetos.add(projeto);
         }
 
@@ -83,6 +90,6 @@ public class ProjetoCSV {
         if (valor == null) {
             return "";
         }
-        return valor.replace(";", ",").replace("\r", " ").replace("\n", " ");
+        return valor.replace(";", ",").replace("\r", " ").replace("\n", " ").trim();
     }
 }

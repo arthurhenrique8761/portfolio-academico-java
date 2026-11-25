@@ -7,3 +7,5 @@ bin/
 *.class
 *.jar
 logs/
+
+portfolio-academico-java/data/usuarios.csv

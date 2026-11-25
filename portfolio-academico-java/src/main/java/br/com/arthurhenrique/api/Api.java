@@ -9,13 +9,34 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import br.com.arthurhenrique.log.LogManager;
 import br.com.arthurhenrique.model.Projeto;
+import br.com.arthurhenrique.service.AuthService;
 import br.com.arthurhenrique.service.ProjetoService;
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.json.JavalinJackson;
 
 public class Api {
 
     private static Javalin instancia;
+
+    private static String obterUsuarioRequisicao(Context ctx) {
+        String usuario = ctx.header("X-Usuario-Logado");
+        if (usuario == null || usuario.isBlank()) {
+            return null;
+        }
+        return usuario.trim().toLowerCase();
+    }
+
+    private static boolean pertenceAoUsuario(Projeto projeto, String usuarioLogado) {
+        if (projeto == null || usuarioLogado == null || usuarioLogado.isBlank()) {
+            return false;
+        }
+        String dono = projeto.getUsuarioLogin();
+        if (dono == null || dono.isBlank()) {
+            return "admin".equalsIgnoreCase(usuarioLogado);
+        }
+        return dono.trim().equalsIgnoreCase(usuarioLogado);
+    }
 
     public static synchronized Javalin iniciar(String usuarioAcesso) {
         if (instancia != null) {
@@ -35,6 +56,14 @@ public class Api {
             LogManager.error("CSV/LOAD", "Erro leitura CSV: " + e.getMessage());
         }
 
+        AuthService authService = new AuthService();
+        try {
+            authService.inicializar();
+        } catch (Exception e) {
+            LogManager.application("ERROR", "Falha ao inicializar usuários CSV: " + e.getMessage());
+            LogManager.error("CSV/USUARIOS", e.getMessage());
+        }
+
         LogManager.access(usuarioAcesso, "LOGIN");
 
         var app = Javalin.create(config -> {
@@ -42,14 +71,73 @@ public class Api {
             config.staticFiles.add("/public");
 
             config.routes.get("/", ctx -> {
-                ctx.redirect("/projetos.html");
+                ctx.redirect("/login.html");
                 LogManager.api("GET", "/", 302);
+            });
+
+            // -- AUTH --
+            config.routes.post("/api/auth/login", ctx -> {
+                try {
+                    Map<?, ?> corpo = ctx.bodyAsClass(Map.class);
+                    String usuario = corpo.get("usuario") != null ? String.valueOf(corpo.get("usuario")) : "";
+                    String senha = corpo.get("senha") != null ? String.valueOf(corpo.get("senha")) : "";
+
+                    if (usuario.isBlank() || senha.isBlank()) {
+                        ctx.status(400).json(Map.of("erro", "Informe usuário e senha."));
+                        LogManager.api("POST", "/api/auth/login", 400);
+                        return;
+                    }
+
+                    var resultado = authService.autenticar(usuario, senha);
+                    if (resultado.isEmpty()) {
+                        ctx.status(401).json(Map.of("erro", "Usuário ou senha inválidos."));
+                        LogManager.api("POST", "/api/auth/login", 401);
+                        return;
+                    }
+
+                    ctx.status(200).json(resultado.get());
+                    LogManager.api("POST", "/api/auth/login", 200);
+                } catch (Exception e) {
+                    ctx.status(500).json(Map.of("erro", "Erro ao processar login."));
+                    LogManager.error("API_AUTH_LOGIN", e.getMessage());
+                    LogManager.api("POST", "/api/auth/login", 500);
+                }
+            });
+
+            config.routes.post("/api/auth/register", ctx -> {
+                try {
+                    Map<?, ?> corpo = ctx.bodyAsClass(Map.class);
+                    String nome = corpo.get("nome") != null ? String.valueOf(corpo.get("nome")) : "";
+                    String usuario = corpo.get("usuario") != null ? String.valueOf(corpo.get("usuario")) : "";
+                    String senha = corpo.get("senha") != null ? String.valueOf(corpo.get("senha")) : "";
+
+                    Map<String, Object> criado = authService.cadastrar(nome, usuario, senha);
+                    ctx.status(201).json(criado);
+                    LogManager.api("POST", "/api/auth/register", 201);
+                } catch (IllegalArgumentException e) {
+                    ctx.status(400).json(Map.of("erro", e.getMessage()));
+                    LogManager.error("API_AUTH_REGISTER", e.getMessage());
+                    LogManager.api("POST", "/api/auth/register", 400);
+                } catch (Exception e) {
+                    ctx.status(500).json(Map.of("erro", "Erro ao cadastrar usuário."));
+                    LogManager.error("API_AUTH_REGISTER", e.getMessage());
+                    LogManager.api("POST", "/api/auth/register", 500);
+                }
             });
 
             // -- GET / READ --
             config.routes.get("/api/projetos", ctx -> {
+                String usuarioLogado = obterUsuarioRequisicao(ctx);
+                if (usuarioLogado == null) {
+                    ctx.status(401).json(Map.of("erro", "Usuário não autenticado."));
+                    LogManager.api("GET", "/api/projetos", 401);
+                    return;
+                }
+
                 try {
-                    List<Projeto> projetos = service.listar();
+                    List<Projeto> projetos = service.listar().stream()
+                            .filter(p -> pertenceAoUsuario(p, usuarioLogado))
+                            .toList();
                     ctx.status(200).json(projetos);
                     LogManager.api("GET", "/api/projetos", 200);
                 } catch (Exception e) {
@@ -61,6 +149,13 @@ public class Api {
 
             // busca por id
             config.routes.get("/api/projetos/{id}", ctx -> {
+                String usuarioLogado = obterUsuarioRequisicao(ctx);
+                if (usuarioLogado == null) {
+                    ctx.status(401).json(Map.of("erro", "Usuário não autenticado."));
+                    LogManager.api("GET", "/api/projetos/{id}", 401);
+                    return;
+                }
+
                 String idParam = ctx.pathParam("id");
                 try {
                     int id = Integer.parseInt(idParam);
@@ -78,6 +173,12 @@ public class Api {
                         return;
                     }
 
+                    if (!pertenceAoUsuario(projeto, usuarioLogado)) {
+                        ctx.status(403).json(Map.of("erro", "Acesso negado a este projeto."));
+                        LogManager.api("GET", "/api/projetos/" + id, 403);
+                        return;
+                    }
+
                     ctx.status(200).json(projeto);
                     LogManager.api("GET", "/api/projetos/" + id, 200);
                 } catch (NumberFormatException e) {
@@ -89,12 +190,20 @@ public class Api {
 
             // -- POST / CREATE --
             config.routes.post("/api/projetos", ctx -> {
+                String usuarioLogado = obterUsuarioRequisicao(ctx);
+                if (usuarioLogado == null) {
+                    ctx.status(401).json(Map.of("erro", "Usuário não autenticado."));
+                    LogManager.api("POST", "/api/projetos", 401);
+                    return;
+                }
+
                 try {
                     Projeto projeto = ctx.bodyAsClass(Projeto.class);
 
                     if (projeto.getId() == 0) {
                         projeto.setId(service.gerarId());
                     }
+                    projeto.setUsuarioLogin(usuarioLogado);
 
                     service.adicionar(projeto);
                     service.salvar();
@@ -115,11 +224,32 @@ public class Api {
 
             // -- PUT / UPDATE --
             config.routes.put("/api/projetos/{id}", ctx -> {
+                String usuarioLogado = obterUsuarioRequisicao(ctx);
+                if (usuarioLogado == null) {
+                    ctx.status(401).json(Map.of("erro", "Usuário não autenticado."));
+                    LogManager.api("PUT", "/api/projetos/{id}", 401);
+                    return;
+                }
+
                 String idParam = ctx.pathParam("id");
                 try {
                     int id = Integer.parseInt(idParam);
+                    Projeto existente = service.buscaPorId(id);
+                    if (existente == null) {
+                        ctx.status(404).json(Map.of("erro", "Projeto não encontrado para alteração."));
+                        LogManager.api("PUT", "/api/projetos/" + id, 404);
+                        return;
+                    }
+
+                    if (!pertenceAoUsuario(existente, usuarioLogado)) {
+                        ctx.status(403).json(Map.of("erro", "Acesso negado para alterar este projeto."));
+                        LogManager.api("PUT", "/api/projetos/" + id, 403);
+                        return;
+                    }
+
                     Projeto projeto = ctx.bodyAsClass(Projeto.class);
                     projeto.setId(id);
+                    projeto.setUsuarioLogin(usuarioLogado);
 
                     boolean alterou = service.alterar(projeto);
                     if (!alterou) {
@@ -149,6 +279,13 @@ public class Api {
 
             // -- DELETE --
             config.routes.delete("/api/projetos/{id}", ctx -> {
+                String usuarioLogado = obterUsuarioRequisicao(ctx);
+                if (usuarioLogado == null) {
+                    ctx.status(401).json(Map.of("erro", "Usuário não autenticado."));
+                    LogManager.api("DELETE", "/api/projetos/{id}", 401);
+                    return;
+                }
+
                 String idParam = ctx.pathParam("id");
                 try {
                     int id = Integer.parseInt(idParam);
@@ -157,6 +294,12 @@ public class Api {
                     if (projeto == null) {
                         ctx.status(404).json(Map.of("erro", "Projeto não encontrado para exclusão."));
                         LogManager.api("DELETE", "/api/projetos/" + id, 404);
+                        return;
+                    }
+
+                    if (!pertenceAoUsuario(projeto, usuarioLogado)) {
+                        ctx.status(403).json(Map.of("erro", "Acesso negado para excluir este projeto."));
+                        LogManager.api("DELETE", "/api/projetos/" + id, 403);
                         return;
                     }
 
