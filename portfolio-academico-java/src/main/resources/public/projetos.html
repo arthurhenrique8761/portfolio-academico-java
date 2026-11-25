@@ -8,66 +8,71 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
-    <header>
-        <h1>Sistema de Projetos</h1>
-        <p>Gerenciamento de projetos e portfólio</p>
-        <nav class="menu-navegacao">
+<body class="layout-lateral">
+    <aside class="menu-lateral">
+        <h2 class="menu-lateral-titulo">Sistema de Projetos</h2>
+        <nav class="menu-lateral-links">
             <a href="dashboard.html">Dashboard</a>
             <a href="projetos.html" class="ativo">Projetos</a>
             <a href="categorias.html">Categorias</a>
             <a href="relatorios.html">Relatórios</a>
         </nav>
-    </header>
+    </aside>
 
-    <main>
+    <div class="conteudo-lateral">
+        <header class="topo-pagina">
+            <h1>Sistema de Projetos</h1>
+            <p>Gerenciamento de projetos e portfólio</p>
+        </header>
 
-        <section>
-            <h2>Cadastrar projeto</h2>
-            <p id="mensagemFormulario" class="mensagem-aviso-form" role="alert" style="display: none;"></p>
-            <form id="formProjeto">
-                <label for="nome">Nome:</label>
-                <input type="text" id="nome" required>
+        <main class="main-sem-rolagem">
+            <div class="grade-projetos-lado-a-lado">
+                <section class="card-cadastro">
+                    <h2>Cadastrar projeto</h2>
+                    <form id="formProjeto">
+                        <label for="nome">Nome:</label>
+                        <input type="text" id="nome" required>
 
-                <label for="descricao">Descrição:</label>
-                <textarea id="descricao" required></textarea>
+                        <label for="descricao">Descrição:</label>
+                        <textarea id="descricao" required></textarea>
 
-                <label for="categoria">Categoria:</label>
-                <select id="categoria">
-                    <option value="Software">Software</option>
-                    <option value="Mobile">Mobile</option>
-                    <option value="Web">Web</option>
-                    <option value="Desktop">Desktop</option>
-                </select>
+                        <label for="categoria">Categoria:</label>
+                        <select id="categoria">
+                            <option value="Software">Software</option>
+                            <option value="Mobile">Mobile</option>
+                            <option value="Web">Web</option>
+                            <option value="Desktop">Desktop</option>
+                        </select>
 
-                <label for="status">Status:</label>
-                <select id="status">
-                    <option value="Planejado">Planejado</option>
-                    <option value="Em Desenvolvimento">Em Desenvolvimento</option>
-                    <option value="Concluído">Concluído</option>
-                    <option value="Cancelado">Cancelado</option>
-                </select>
+                        <label for="status">Status:</label>
+                        <select id="status">
+                            <option value="Planejado">Planejado</option>
+                            <option value="Em Desenvolvimento">Em Desenvolvimento</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
 
-                <label for="prazo">Prazo (opcional):</label>
-                <input type="date" id="prazo">
+                        <label for="prazo">Prazo (opcional):</label>
+                        <input type="date" id="prazo">
 
-                <button type="submit">Cadastrar projeto</button>
-            </form>
-        </section>
+                        <button type="submit">Cadastrar projeto</button>
+                    </form>
+                </section>
 
-        <section>
-            <h2>Projetos cadastrados</h2>
-            <div class="busca-id">
-                <label for="buscaId">Buscar por ID:</label>
-                <input type="number" id="buscaId" min="1" placeholder="Ex.: 1">
-                <button type="button" id="btnBuscarId">Buscar</button>
-                <button type="button" id="btnLimparBusca">Mostrar todos</button>
+                <section class="secao-rolavel card-listagem">
+                    <h2>Projetos cadastrados</h2>
+                    <div class="busca-id">
+                        <label for="buscaId">Buscar por ID:</label>
+                        <input type="number" id="buscaId" min="1" placeholder="Ex.: 1">
+                        <button type="button" id="btnBuscarId">Buscar</button>
+                        <button type="button" id="btnLimparBusca">Mostrar todos</button>
+                    </div>
+                    <p id="mensagem"></p>
+                    <div id="listaProjetos"></div>
+                </section>
             </div>
-            <p id="mensagem"></p>
-            <div id="listaProjetos"></div>
-        </section>
-
-    </main>
+        </main>
+    </div>
 
     <script src="js/projetos.js"></script>
 </body>
