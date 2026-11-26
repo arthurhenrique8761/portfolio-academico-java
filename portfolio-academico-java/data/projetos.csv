@@ -7,3 +7,5 @@ id;nome;descricao;categoria;status;dataCriacao;prazo;usuarioLogin
 6;Validador de CSV Corporativo;Ferramenta desktop para conferência de lotes e integridade de dados;Desktop;Planejado;2026-10-28;2027-01-15;
 7;Módulo de Notificações;Serviço de software para envio de alertas e eventos do sistema;Software;Cancelado;2026-11-02;2026-11-30;
 8;Teste;12312323123;Software;Planejado;2026-11-25;2026-11-28;efihm
+9;testeeeeee;aAAAAAAAAAAAAAAAAAAAAAAAAAA;Software;Planejado;2026-11-26;2027-03-02;resenha
+10;testeeeeeeeeeeee3;aAAAAAAAAAAAAAAAAAAAAAA;Software;Planejado;2026-11-26;3000-02-12;resenha

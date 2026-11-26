@@ -1,5 +1,7 @@
 package br.com.arthurhenrique.view;
 
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -8,7 +10,13 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
@@ -36,7 +44,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -44,6 +51,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -63,27 +71,33 @@ public class TelaPrincipal extends JFrame {
     // =====================================================================
     // CONSTANTES
     // =====================================================================
-
-    // Paleta e tipografia
-    private static final Color COR_FUNDO = new Color(244, 246, 248);
+    private static final Color COR_FUNDO = new Color(236, 239, 241);
+    private static final Color COR_SIDEBAR = new Color(38, 52, 58);
+    private static final Color COR_SIDEBAR_ATIVO = new Color(55, 71, 79);
     private static final Color COR_TOPO = new Color(38, 50, 56);
     private static final Color COR_CARD = Color.WHITE;
     private static final Color COR_BORDA = new Color(220, 226, 232);
     private static final Color COR_TEXTO = new Color(33, 37, 41);
-    private static final Color COR_MUTED = new Color(108, 117, 125);
+    private static final Color COR_MUTED = new Color(84, 110, 122);
 
-    private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 22);
+    private static final Color COR_AZUL = new Color(25, 118, 210);
+    private static final Color COR_VERDE = new Color(46, 125, 50);
+    private static final Color COR_LARANJA = new Color(239, 108, 0);
+    private static final Color COR_VERMELHO = new Color(198, 40, 40);
+
+    private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 24);
     private static final Font FONTE_SUBTITULO = new Font("Segoe UI", Font.PLAIN, 13);
-    private static final Font FONTE_SECAO = new Font("Segoe UI", Font.BOLD, 16);
+    private static final Font FONTE_SECAO = new Font("Segoe UI", Font.BOLD, 15);
     private static final Font FONTE_PADRAO = new Font("Segoe UI", Font.PLAIN, 13);
     private static final Font FONTE_BOTAO = new Font("Segoe UI", Font.BOLD, 13);
 
-    // Domínio (mesmos valores da versão básica e da versão web)
-    private static final String[] CATEGORIAS = { "Software", "Mobile", "Web", "Desktop" };
-    private static final String[] STATUS = { "Planejado", "Em Desenvolvimento", "Concluído", "Cancelado" };
+    private static final String[] ROTAS = {"DASHBOARD", "PROJETOS", "CATEGORIAS", "RELATORIOS"};
+    private static final String[] ROTULOS_MENU = {"Dashboard", "Projetos", "Categorias", "Relatórios"};
+    private static final String[] CATEGORIAS = {"Software", "Mobile", "Web", "Desktop"};
+    private static final String[] STATUS = {"Planejado", "Em Desenvolvimento", "Concluído", "Cancelado"};
     private static final String[] OPCOES_CATEGORIA = comOpcaoTodos("Todas", CATEGORIAS);
     private static final String[] OPCOES_STATUS = comOpcaoTodos("Todos", STATUS);
-    private static final String[] COLUNAS = { "ID", "Nome", "Categoria", "Status", "Prazo" };
+    private static final String[] COLUNAS = {"ID", "Nome", "Categoria", "Status", "Prazo"};
 
     private static final int COL_ID = 0;
     private static final int COL_NOME = 1;
@@ -93,34 +107,41 @@ public class TelaPrincipal extends JFrame {
 
     private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private static final Color COR_MENU_ATIVO = new Color(55, 71, 79);
+    private static final String[] TITULOS_PAGINA = {
+        "Sistema de Projetos",
+        "Sistema de Projetos",
+        "Categorias",
+        "Relatórios"
+    };
 
-    // Páginas do menu lateral e subtítulo do cabeçalho de cada uma (mesma ordem)
-    private static final String[] PAGINAS = { "Dashboard", "Projetos", "Categorias", "Relatórios" };
-    private static final int PAGINA_PROJETOS = 1;
     private static final String[] SUBTITULOS = {
-            "Visão geral e indicadores do portfólio",
-            "Gerenciamento de projetos e portfólio",
-            "Exploração e filtragem de projetos por categoria",
-            "Relatórios detalhados, filtros e exportação de dados"
+        "Visão geral e indicadores do portfólio",
+        "Gerenciamento de projetos e portfólio",
+        "Exploração e filtragem de projetos por categoria",
+        "Relatórios detalhados, filtros e exportação de dados"
     };
 
     // =====================================================================
     // CAMPOS
     // =====================================================================
+    private final ProjetoService service;
+    private final ApiClient apiClient;
+    private final String usuarioLogado;
+    private final String nomeUsuarioLogado;
+    private final String perfilUsuarioLogado;
 
-    // Dados
-    private ProjetoService service;
-    private ApiClient apiClient;
     private List<Projeto> projetosCache = new ArrayList<>();
     private boolean atualizandoTabela = false;
     private boolean erroCargaExibido = false;
 
-    // Cabeçalho e navegação
+    // Navegação lateral + conteúdo central
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel painelConteudo = new JPanel(cardLayout);
+    private final Map<String, JButton> botoesMenu = new LinkedHashMap<>();
+    private String rotaAtiva = "DASHBOARD";
+    private JLabel tituloCabecalho;
     private JLabel subtituloCabecalho;
-    private List<JButton> botoesMenu;
-    private CardLayout layoutPaginas;
-    private JPanel painelPaginas;
+    private JButton botaoSair;
 
     // Aba Projetos
     private JTextField campoNome;
@@ -132,6 +153,8 @@ public class TelaPrincipal extends JFrame {
     private JButton botaoLimpar;
     private JButton botaoExcluir;
     private JButton botaoAlterar;
+    private JTextField campoBuscaId;
+    private TableRowSorter<TableModel> sorterProjetos;
     private DefaultTableModel modelo;
     private JTable tabela;
 
@@ -141,16 +164,18 @@ public class TelaPrincipal extends JFrame {
     private DefaultTableModel modeloCategorias;
     private JLabel lblBadgeProjetosCat;
 
-    // Aba Dashboard
+    // Dashboard (2 colunas + 4 KPIs + 4 gráficos + últimos projetos)
     private JLabel lblKpiTotal;
     private JLabel lblKpiConcluidos;
-    private JLabel lblKpiDesenvolvimento;
-    private JLabel lblKpiPlanejados;
-    private Map<String, JLabel> lblDistribuicao;
-    private JLabel lblPercentualConclusao;
-    private JLabel lblDetalheTaxa;
-    private JProgressBar barraConclusao;
+    private JLabel lblKpiAtivos;
+    private JLabel lblKpiCancelados;
+    private JLabel lblResumoPrazos;
     private JPanel listaUltimosProjetos;
+
+    private final PainelGraficoStatus graficoStatus = new PainelGraficoStatus();
+    private final PainelGraficoCategoria graficoCategoria = new PainelGraficoCategoria();
+    private final PainelGraficoMensal graficoMensal = new PainelGraficoMensal();
+    private final PainelGraficoPrazos graficoPrazos = new PainelGraficoPrazos();
 
     // Aba Relatórios
     private JTextField campoBuscaRelatorio;
@@ -161,12 +186,25 @@ public class TelaPrincipal extends JFrame {
     private TableRowSorter<TableModel> sorterRelatorios;
 
     // =====================================================================
-    // CONSTRUTOR
+    // CONSTRUTORES
     // =====================================================================
-
     public TelaPrincipal() throws Exception {
-        setTitle("Sistema de Projetos");
-        setSize(1120, 840);
+        this(System.getProperty("user.name"), System.getProperty("user.name"), "USER");
+    }
+
+    public TelaPrincipal(String usuarioLogado, String nomeUsuarioLogado, String perfilUsuarioLogado) throws Exception {
+        this.usuarioLogado = (usuarioLogado != null && !usuarioLogado.isBlank())
+                ? usuarioLogado.trim()
+                : System.getProperty("user.name");
+        this.nomeUsuarioLogado = (nomeUsuarioLogado != null && !nomeUsuarioLogado.isBlank())
+                ? nomeUsuarioLogado.trim()
+                : this.usuarioLogado;
+        this.perfilUsuarioLogado = (perfilUsuarioLogado != null && !perfilUsuarioLogado.isBlank())
+                ? perfilUsuarioLogado.trim()
+                : "USER";
+
+        setTitle("Sistema de Projetos - " + this.nomeUsuarioLogado);
+        setSize(1240, 900);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -174,7 +212,7 @@ public class TelaPrincipal extends JFrame {
         setLayout(new BorderLayout());
 
         service = new ProjetoService();
-        apiClient = new ApiClient();
+        apiClient = new ApiClient(this.usuarioLogado);
 
         criarComponentes();
         criarEventos();
@@ -189,22 +227,21 @@ public class TelaPrincipal extends JFrame {
     }
 
     // =====================================================================
-    // MONTAGEM DA INTERFACE - estrutura geral
+    // MONTAGEM DA INTERFACE - MENU LATERAL + CARDLAYOUT CENTRAL
     // =====================================================================
-
     public void criarComponentes() {
         criarFormulario();
         criarTabelaProjetos();
 
-        JPanel areaPrincipal = new JPanel(new BorderLayout());
-        areaPrincipal.setBackground(COR_FUNDO);
-        areaPrincipal.add(criarCabecalho(), BorderLayout.NORTH);
-        areaPrincipal.add(criarPaginas(), BorderLayout.CENTER);
+        painelConteudo.setBackground(COR_FUNDO);
+        painelConteudo.add(criarPainelDashboard(), "DASHBOARD");
+        painelConteudo.add(criarAbaProjetos(), "PROJETOS");
+        painelConteudo.add(criarAbaCategorias(), "CATEGORIAS");
+        painelConteudo.add(criarAbaRelatorios(), "RELATORIOS");
 
         add(criarMenuLateral(), BorderLayout.WEST);
-        add(areaPrincipal, BorderLayout.CENTER);
-
-        mostrarPagina(PAGINA_PROJETOS);
+        add(painelConteudo, BorderLayout.CENTER);
+        selecionarRota("DASHBOARD");
 
         revalidate();
         repaint();
@@ -213,96 +250,106 @@ public class TelaPrincipal extends JFrame {
     private JPanel criarMenuLateral() {
         JPanel menu = new JPanel();
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
-        menu.setBackground(COR_TOPO);
-        menu.setPreferredSize(new Dimension(214, 0));
+        menu.setPreferredSize(new Dimension(225, 0));
+        menu.setBackground(COR_SIDEBAR);
+        menu.setBorder(new EmptyBorder(22, 16, 20, 16));
 
-        JLabel titulo = new JLabel("<html>Sistema de<br>Projetos</html>");
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titulo.setForeground(Color.WHITE);
-        titulo.setBorder(new EmptyBorder(20, 20, 16, 20));
-        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel marca = new JLabel("<html>Sistema de<br>Projetos</html>");
+        marca.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        marca.setForeground(Color.WHITE);
+        marca.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel separador = new JPanel();
-        separador.setBackground(new Color(69, 90, 100));
-        separador.setPreferredSize(new Dimension(1, 1));
-        separador.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-        separador.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel divisorTopo = new JPanel();
+        divisorTopo.setBackground(new Color(255, 255, 255, 30));
+        divisorTopo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        divisorTopo.setPreferredSize(new Dimension(0, 1));
+        divisorTopo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel navegacao = new JPanel();
-        navegacao.setLayout(new BoxLayout(navegacao, BoxLayout.Y_AXIS));
-        navegacao.setBackground(COR_TOPO);
-        navegacao.setBorder(new EmptyBorder(14, 8, 0, 8));
-        navegacao.setAlignmentX(Component.LEFT_ALIGNMENT);
+        menu.add(marca);
+        menu.add(Box.createVerticalStrut(16));
+        menu.add(divisorTopo);
+        menu.add(Box.createVerticalStrut(16));
 
-        botoesMenu = new ArrayList<>();
-        for (int i = 0; i < PAGINAS.length; i++) {
-            final int indice = i;
-            JButton btn = new JButton(PAGINAS[i]);
+        for (int i = 0; i < ROTAS.length; i++) {
+            String rota = ROTAS[i];
+            String rotulo = ROTULOS_MENU[i];
+            JButton btn = new JButton(rotulo);
             btn.setFont(FONTE_BOTAO);
+            btn.setForeground(Color.WHITE);
+            btn.setBackground(COR_SIDEBAR);
             btn.setHorizontalAlignment(SwingConstants.LEFT);
             btn.setFocusPainted(false);
-            btn.setOpaque(true);
             btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btn.setBorder(new EmptyBorder(10, 12, 10, 12));
             btn.setAlignmentX(Component.LEFT_ALIGNMENT);
             btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-            btn.addActionListener(e -> mostrarPagina(indice));
-            botoesMenu.add(btn);
-            navegacao.add(btn);
-            navegacao.add(Box.createVerticalStrut(4));
+            btn.setBorder(new EmptyBorder(9, 14, 9, 14));
+            btn.addActionListener(e -> selecionarRota(rota));
+            botoesMenu.put(rota, btn);
+
+            menu.add(btn);
+            menu.add(Box.createVerticalStrut(6));
         }
 
-        menu.add(titulo);
-        menu.add(separador);
-        menu.add(navegacao);
+        menu.add(Box.createVerticalGlue());
+
+        JPanel divisorRodape = new JPanel();
+        divisorRodape.setBackground(new Color(255, 255, 255, 30));
+        divisorRodape.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        divisorRodape.setPreferredSize(new Dimension(0, 1));
+        divisorRodape.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblUsuario = new JLabel(nomeUsuarioLogado + " (" + perfilUsuarioLogado + ")");
+        lblUsuario.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblUsuario.setForeground(new Color(176, 190, 197));
+        lblUsuario.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        botaoSair = new JButton("Sair");
+        botaoSair.setFont(FONTE_BOTAO);
+        botaoSair.setForeground(Color.WHITE);
+        botaoSair.setBackground(new Color(47, 62, 70));
+        botaoSair.setFocusPainted(false);
+        botaoSair.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        botaoSair.setAlignmentX(Component.LEFT_ALIGNMENT);
+        botaoSair.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        botaoSair.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 255, 255, 55), 1, true),
+                new EmptyBorder(6, 12, 6, 12)));
+
+        menu.add(divisorRodape);
+        menu.add(Box.createVerticalStrut(14));
+        menu.add(lblUsuario);
+        menu.add(Box.createVerticalStrut(10));
+        menu.add(botaoSair);
+
         return menu;
     }
 
-    private JPanel criarCabecalho() {
-        JPanel topo = new JPanel();
-        topo.setLayout(new BoxLayout(topo, BoxLayout.Y_AXIS));
-        topo.setBackground(COR_CARD);
-        topo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, COR_BORDA),
-                new EmptyBorder(14, 24, 12, 24)));
+    private void selecionarRota(String rota) {
+        rotaAtiva = rota;
+        cardLayout.show(painelConteudo, rota);
 
-        JLabel titulo = new JLabel("Sistema de Projetos");
-        titulo.setFont(FONTE_TITULO);
-        titulo.setForeground(COR_TEXTO);
-        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        int idx = 0;
+        for (int i = 0; i < ROTAS.length; i++) {
+            if (ROTAS[i].equals(rota)) {
+                idx = i;
+                break;
+            }
+        }
 
-        subtituloCabecalho = new JLabel(SUBTITULOS[PAGINA_PROJETOS]);
-        subtituloCabecalho.setFont(FONTE_SUBTITULO);
-        subtituloCabecalho.setForeground(COR_MUTED);
-        subtituloCabecalho.setAlignmentX(Component.LEFT_ALIGNMENT);
+        if (tituloCabecalho != null) {
+            tituloCabecalho.setText(TITULOS_PAGINA[idx]);
+        }
+        if (subtituloCabecalho != null) {
+            subtituloCabecalho.setText(SUBTITULOS[idx]);
+        }
 
-        topo.add(titulo);
-        topo.add(Box.createVerticalStrut(2));
-        topo.add(subtituloCabecalho);
-        return topo;
-    }
+        for (Map.Entry<String, JButton> entry : botoesMenu.entrySet()) {
+            boolean ativa = entry.getKey().equals(rota);
+            entry.getValue().setBackground(ativa ? COR_SIDEBAR_ATIVO : COR_SIDEBAR);
+        }
 
-    private JPanel criarPaginas() {
-        layoutPaginas = new CardLayout();
-        painelPaginas = new JPanel(layoutPaginas);
-        painelPaginas.setBackground(COR_FUNDO);
-
-        painelPaginas.add(criarAbaDashboard(), PAGINAS[0]);
-        painelPaginas.add(criarAbaProjetos(), PAGINAS[1]);
-        painelPaginas.add(criarAbaCategorias(), PAGINAS[2]);
-        painelPaginas.add(criarAbaRelatorios(), PAGINAS[3]);
-        return painelPaginas;
-    }
-
-    private void mostrarPagina(int indice) {
-        layoutPaginas.show(painelPaginas, PAGINAS[indice]);
-        subtituloCabecalho.setText(SUBTITULOS[indice]);
-
-        for (int i = 0; i < botoesMenu.size(); i++) {
-            JButton btn = botoesMenu.get(i);
-            boolean ativo = i == indice;
-            btn.setBackground(ativo ? COR_MENU_ATIVO : COR_TOPO);
-            btn.setForeground(ativo ? Color.WHITE : new Color(207, 216, 220));
+        if ("DASHBOARD".equals(rota)) {
+            atualizarDashboard();
         }
     }
 
@@ -311,47 +358,346 @@ public class TelaPrincipal extends JFrame {
         botaoLimpar.addActionListener(e -> limparFormulario());
         botaoExcluir.addActionListener(e -> excluirProjeto());
         botaoAlterar.addActionListener(e -> alterarProjeto());
+        botaoSair.addActionListener(e -> encerrarSessao());
+    }
+
+    private void encerrarSessao() {
+        LogManager.access(usuarioLogado, "LOGOUT_SWING");
+        dispose();
+
+        SwingUtilities.invokeLater(() -> {
+            TelaLogin login = new TelaLogin(null);
+            login.setVisible(true);
+            if (!login.isAutenticado()) {
+                System.exit(0);
+                return;
+            }
+            try {
+                TelaPrincipal novaTela = new TelaPrincipal(
+                        login.getUsuarioLogado(),
+                        login.getNomeUsuarioLogado(),
+                        login.getPerfilUsuarioLogado()
+                );
+                novaTela.setVisible(true);
+            } catch (Exception ex) {
+                LogManager.error("SWING_RELOGIN", ex.getMessage());
+                JOptionPane.showMessageDialog(null, "Erro ao abrir janela: " + ex.getMessage());
+            }
+        });
     }
 
     // =====================================================================
-    // ABA PROJETOS - montagem
+    // DASHBOARD - IGUAL À VERSÃO WEB (4 KPIs + GRID 2x2 GRÁFICOS + ÚLTIMOS)
     // =====================================================================
+    private JPanel criarPainelDashboard() {
+        lblKpiTotal = new JLabel("0");
+        lblKpiConcluidos = new JLabel("0");
+        lblKpiAtivos = new JLabel("0");
+        lblKpiCancelados = new JLabel("0");
+        lblResumoPrazos = new JLabel("No prazo: 0 (0%) | Atrasados: 0 (0%)");
 
+        // Cabeçalho branco superior (idêntico à web)
+        JPanel topoBranco = new JPanel();
+        topoBranco.setLayout(new BoxLayout(topoBranco, BoxLayout.Y_AXIS));
+        topoBranco.setBackground(COR_CARD);
+        topoBranco.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, COR_BORDA),
+                new EmptyBorder(16, 26, 16, 26)));
+
+        tituloCabecalho = new JLabel(TITULOS_PAGINA[0]);
+        tituloCabecalho.setFont(FONTE_TITULO);
+        tituloCabecalho.setForeground(COR_TEXTO);
+        tituloCabecalho.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        subtituloCabecalho = new JLabel(SUBTITULOS[0]);
+        subtituloCabecalho.setFont(FONTE_SUBTITULO);
+        subtituloCabecalho.setForeground(COR_MUTED);
+        subtituloCabecalho.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        topoBranco.add(tituloCabecalho);
+        topoBranco.add(Box.createVerticalStrut(3));
+        topoBranco.add(subtituloCabecalho);
+
+        // Linha dos 4 KPIs
+        JPanel linhaKpis = new JPanel(new GridLayout(1, 4, 16, 0));
+        linhaKpis.setOpaque(false);
+        linhaKpis.setPreferredSize(new Dimension(0, 82));
+        linhaKpis.setMaximumSize(new Dimension(Integer.MAX_VALUE, 82));
+        linhaKpis.add(criarCartaoKpi("Total de Projetos", lblKpiTotal, COR_AZUL));
+        linhaKpis.add(criarCartaoKpi("Projetos Concluídos", lblKpiConcluidos, COR_VERDE));
+        linhaKpis.add(criarCartaoKpi("Projetos Ativos", lblKpiAtivos, COR_LARANJA));
+        linhaKpis.add(criarCartaoKpi("Projetos Cancelados", lblKpiCancelados, COR_VERMELHO));
+
+        // Grade 2x2 dos 4 gráficos (lado esquerdo/central)
+        JPanel gradeGraficos = new JPanel(new GridLayout(2, 2, 16, 16));
+        gradeGraficos.setOpaque(false);
+        gradeGraficos.add(criarCardGrafico("Status dos Projetos", graficoStatus, null));
+        gradeGraficos.add(criarCardGrafico("Projetos por Categoria", graficoCategoria, null));
+        gradeGraficos.add(criarCardGrafico("Evolução Mensal", graficoMensal, null));
+        gradeGraficos.add(criarCardGrafico("Cumprimento de Prazos", graficoPrazos, lblResumoPrazos));
+
+        // Coluna direita: Últimos Projetos Cadastrados (altura total das 2 linhas de gráficos)
+        listaUltimosProjetos = new JPanel();
+        listaUltimosProjetos.setLayout(new BoxLayout(listaUltimosProjetos, BoxLayout.Y_AXIS));
+        listaUltimosProjetos.setBackground(COR_CARD);
+
+        JScrollPane scrollUltimos = new JScrollPane(listaUltimosProjetos);
+        scrollUltimos.setBorder(null);
+        scrollUltimos.getViewport().setBackground(COR_CARD);
+        scrollUltimos.getVerticalScrollBar().setUnitIncrement(12);
+
+        JPanel cardUltimos = criarCard();
+        cardUltimos.setLayout(new BorderLayout(0, 12));
+        cardUltimos.add(criarTituloSecao("Últimos Projetos Cadastrados"), BorderLayout.NORTH);
+        cardUltimos.add(scrollUltimos, BorderLayout.CENTER);
+
+        // Grade inferior: 2/3 gráficos (2x2) + 1/3 últimos projetos
+        JPanel gradeInferior = new JPanel(new GridBagLayout());
+        gradeInferior.setOpaque(false);
+
+        GridBagConstraints gbcGraficos = new GridBagConstraints();
+        gbcGraficos.gridx = 0;
+        gbcGraficos.gridy = 0;
+        gbcGraficos.weightx = 0.67;
+        gbcGraficos.weighty = 1.0;
+        gbcGraficos.fill = GridBagConstraints.BOTH;
+        gbcGraficos.insets = new Insets(0, 0, 0, 16);
+
+        GridBagConstraints gbcUltimos = new GridBagConstraints();
+        gbcUltimos.gridx = 1;
+        gbcUltimos.gridy = 0;
+        gbcUltimos.weightx = 0.33;
+        gbcUltimos.weighty = 1.0;
+        gbcUltimos.fill = GridBagConstraints.BOTH;
+
+        gradeInferior.add(gradeGraficos, gbcGraficos);
+        gradeInferior.add(cardUltimos, gbcUltimos);
+
+        JPanel corpo = new JPanel(new BorderLayout(0, 16));
+        corpo.setBackground(COR_FUNDO);
+        corpo.setBorder(new EmptyBorder(18, 22, 18, 22));
+        corpo.add(linhaKpis, BorderLayout.NORTH);
+        corpo.add(gradeInferior, BorderLayout.CENTER);
+
+        JPanel painel = new JPanel(new BorderLayout());
+        painel.setBackground(COR_FUNDO);
+        painel.add(topoBranco, BorderLayout.NORTH);
+        painel.add(corpo, BorderLayout.CENTER);
+        return painel;
+    }
+
+    private JPanel criarCartaoKpi(String titulo, JLabel lblValor, Color corDestaque) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(COR_CARD);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COR_BORDA, 1, true),
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 4, 0, 0, corDestaque),
+                        new EmptyBorder(12, 16, 12, 16))));
+
+        lblValor.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblValor.setForeground(COR_TEXTO);
+        lblValor.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblTitulo = new JLabel(titulo);
+        lblTitulo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTitulo.setForeground(COR_MUTED);
+        lblTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        card.add(lblValor);
+        card.add(Box.createVerticalStrut(3));
+        card.add(lblTitulo);
+        return card;
+    }
+
+    private JPanel criarCardGrafico(String titulo, JComponent grafico, JLabel rodape) {
+        JPanel card = criarCard();
+        card.setLayout(new BorderLayout(0, 6));
+        card.add(criarTituloSecao(titulo), BorderLayout.NORTH);
+        card.add(grafico, BorderLayout.CENTER);
+
+        if (rodape != null) {
+            rodape.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            rodape.setForeground(COR_MUTED);
+            rodape.setHorizontalAlignment(SwingConstants.CENTER);
+            card.add(rodape, BorderLayout.SOUTH);
+        }
+        return card;
+    }
+
+    private void atualizarDashboard() {
+        if (lblKpiTotal == null) {
+            return;
+        }
+
+        int total = projetosCache.size();
+        int concluidos = 0;
+        int ativos = 0;
+        int cancelados = 0;
+        int emDesenvolvimento = 0;
+        int planejado = 0;
+        int noPrazo = 0;
+        int atrasados = 0;
+
+        // Ordem idêntica à web: Web, Software, Mobile, Desktop
+        String[] ordemCategoriasWeb = {"Web", "Software", "Mobile", "Desktop"};
+        int[] porCategoria = new int[ordemCategoriasWeb.length];
+        int[] porMes = new int[12];
+        LocalDate hoje = LocalDate.now();
+
+        for (Projeto p : projetosCache) {
+            String status = p.getStatus() != null ? p.getStatus().trim().toUpperCase() : "";
+            boolean isConcluido = status.contains("CONCLU");
+            boolean isCancelado = status.contains("CANCEL");
+
+            if (isConcluido) {
+                concluidos++;
+            } else if (isCancelado) {
+                cancelados++;
+            } else {
+                ativos++;
+            }
+
+            if (status.contains("DESENV")) {
+                emDesenvolvimento++;
+            }
+            if (status.contains("PLANEJ")) {
+                planejado++;
+            }
+
+            String cat = p.getCategoria() != null ? p.getCategoria().trim() : "";
+            for (int i = 0; i < ordemCategoriasWeb.length; i++) {
+                if (ordemCategoriasWeb[i].equalsIgnoreCase(cat)) {
+                    porCategoria[i]++;
+                    break;
+                }
+            }
+
+            LocalDate dataRef = p.getDataCriacao() != null ? p.getDataCriacao() : p.getPrazo();
+            if (dataRef != null) {
+                porMes[dataRef.getMonthValue() - 1]++;
+            }
+
+            if (p.getPrazo() != null) {
+                if (isConcluido || !p.getPrazo().isBefore(hoje)) {
+                    noPrazo++;
+                } else {
+                    atrasados++;
+                }
+            }
+        }
+
+        lblKpiTotal.setText(String.valueOf(total));
+        lblKpiConcluidos.setText(String.valueOf(concluidos));
+        lblKpiAtivos.setText(String.valueOf(ativos));
+        lblKpiCancelados.setText(String.valueOf(cancelados));
+
+        int totalPrazos = noPrazo + atrasados;
+        int pctNoPrazo = totalPrazos > 0 ? Math.round((noPrazo * 100f) / totalPrazos) : 0;
+        int pctAtrasados = totalPrazos > 0 ? Math.round((atrasados * 100f) / totalPrazos) : 0;
+        lblResumoPrazos.setText("No prazo: " + noPrazo + " (" + pctNoPrazo + "%) | Atrasados: "
+                + atrasados + " (" + pctAtrasados + "%)");
+
+        graficoStatus.setDados(concluidos, emDesenvolvimento, planejado, cancelados);
+        graficoCategoria.setDados(porCategoria);
+        graficoMensal.setDados(porMes);
+        graficoPrazos.setDados(noPrazo, atrasados);
+
+        atualizarListaUltimosProjetos();
+    }
+
+    private void atualizarListaUltimosProjetos() {
+        listaUltimosProjetos.removeAll();
+
+        if (projetosCache.isEmpty()) {
+            JLabel vazio = new JLabel("Nenhum projeto cadastrado.");
+            vazio.setFont(FONTE_PADRAO);
+            vazio.setForeground(COR_MUTED);
+            vazio.setAlignmentX(Component.LEFT_ALIGNMENT);
+            listaUltimosProjetos.add(vazio);
+        } else {
+            int inicio = Math.max(0, projetosCache.size() - 5);
+            for (int i = projetosCache.size() - 1; i >= inicio; i--) {
+                Projeto p = projetosCache.get(i);
+                String prazoFmt = formatarPrazo(p);
+                String textoPrazo = prazoFmt.isEmpty() ? "Sem prazo" : prazoFmt;
+
+                JPanel itemCard = new JPanel();
+                itemCard.setLayout(new BoxLayout(itemCard, BoxLayout.Y_AXIS));
+                itemCard.setBackground(Color.WHITE);
+                itemCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+                itemCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 68));
+                itemCard.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(COR_BORDA, 1, true),
+                        new EmptyBorder(10, 14, 10, 14)));
+
+                JLabel lblNome = new JLabel("#" + p.getId() + " - " + (p.getNome() != null ? p.getNome() : ""));
+                lblNome.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                lblNome.setForeground(COR_TEXTO);
+                lblNome.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                JLabel lblMeta = new JLabel("Categoria: " + (p.getCategoria() != null ? p.getCategoria() : "")
+                        + " | Status: " + (p.getStatus() != null ? p.getStatus() : "")
+                        + " | Prazo: " + textoPrazo);
+                lblMeta.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                lblMeta.setForeground(COR_MUTED);
+                lblMeta.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                itemCard.add(lblNome);
+                itemCard.add(Box.createVerticalStrut(4));
+                itemCard.add(lblMeta);
+
+                listaUltimosProjetos.add(itemCard);
+                listaUltimosProjetos.add(Box.createVerticalStrut(10));
+            }
+        }
+
+        listaUltimosProjetos.revalidate();
+        listaUltimosProjetos.repaint();
+    }
+
+    // =====================================================================
+    // ABA PROJETOS - 2 COLUNAS (CADASTRAR PROJETO | PROJETOS CADASTRADOS)
+    // =====================================================================
     private void criarFormulario() {
-        campoNome = new JTextField(22);
-        campoDescricao = new JTextArea(4, 22);
+        campoNome = new JTextField();
+        campoDescricao = new JTextArea(4, 20);
         campoDescricao.setLineWrap(true);
         campoDescricao.setWrapStyleWord(true);
-        campoDescricao.setFont(FONTE_PADRAO);
-        campoDescricao.setForeground(COR_TEXTO);
-        campoDescricao.setBorder(new EmptyBorder(6, 10, 6, 10));
-        campoPrazo = new JTextField(10);
+        campoPrazo = new JTextField();
         campoPrazo.setToolTipText("AAAA-MM-DD ou DD/MM/AAAA");
 
         comboCategoria = new JComboBox<>(CATEGORIAS);
         comboStatus = new JComboBox<>(STATUS);
 
-        botaoCadastrar = new JButton("Cadastrar");
+        botaoCadastrar = new JButton("Cadastrar projeto");
         botaoAlterar = new JButton("Alterar");
         botaoExcluir = new JButton("Excluir");
         botaoLimpar = new JButton("Limpar");
 
         estilizarCampo(campoNome);
+        campoDescricao.setFont(FONTE_PADRAO);
+        campoDescricao.setForeground(COR_TEXTO);
+        campoDescricao.setBackground(Color.WHITE);
+        campoDescricao.setBorder(new EmptyBorder(6, 10, 6, 10));
         estilizarCampo(campoPrazo);
         estilizarCombo(comboCategoria);
         estilizarCombo(comboStatus);
-        estilizarBotao(botaoCadastrar, new Color(33, 150, 243), Color.WHITE);
+
+        estilizarBotao(botaoCadastrar, new Color(241, 243, 245), COR_TEXTO);
         estilizarBotao(botaoAlterar, new Color(255, 152, 0), Color.WHITE);
-        estilizarBotao(botaoExcluir, new Color(220, 53, 69), Color.WHITE);
+        estilizarBotao(botaoExcluir, COR_VERMELHO, Color.WHITE);
         estilizarBotao(botaoLimpar, new Color(108, 117, 125), Color.WHITE);
     }
 
     private void criarTabelaProjetos() {
         modelo = criarModeloTabela();
+        sorterProjetos = new TableRowSorter<>(modelo);
         tabela = new JTable(modelo);
+        tabela.setRowSorter(sorterProjetos);
         tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Ao selecionar uma linha, carrega os dados no formulário
         tabela.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting() || atualizandoTabela) {
                 return;
@@ -364,78 +710,185 @@ public class TelaPrincipal extends JFrame {
     }
 
     private JPanel criarAbaProjetos() {
-        JScrollPane scrollTabela = new JScrollPane(tabela);
-        estilizarTabela(tabela, scrollTabela);
+        JPanel topoBranco = new JPanel();
+        topoBranco.setLayout(new BoxLayout(topoBranco, BoxLayout.Y_AXIS));
+        topoBranco.setBackground(COR_CARD);
+        topoBranco.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, COR_BORDA),
+                new EmptyBorder(18, 28, 18, 28)));
+
+        JLabel h1 = new JLabel("Sistema de Projetos");
+        h1.setFont(FONTE_TITULO);
+        h1.setForeground(COR_TEXTO);
+        h1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel sub = new JLabel("Gerenciamento de projetos e portfólio");
+        sub.setFont(FONTE_SUBTITULO);
+        sub.setForeground(COR_MUTED);
+        sub.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        topoBranco.add(h1);
+        topoBranco.add(Box.createVerticalStrut(3));
+        topoBranco.add(sub);
+
+        // Coluna esquerda: formulário vertical
+        JPanel formVertical = new JPanel();
+        formVertical.setLayout(new BoxLayout(formVertical, BoxLayout.Y_AXIS));
+        formVertical.setBackground(COR_CARD);
+
+        JLabel tituloForm = new JLabel("Cadastrar projeto");
+        tituloForm.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        tituloForm.setForeground(COR_TEXTO);
+        tituloForm.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JScrollPane scrollDescricao = new JScrollPane(campoDescricao);
         scrollDescricao.setBorder(BorderFactory.createLineBorder(COR_BORDA, 1, true));
-        scrollDescricao.setPreferredSize(new Dimension(300, 90));
+        scrollDescricao.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollDescricao.setMaximumSize(new Dimension(Integer.MAX_VALUE, 95));
 
-        // Coluna esquerda: formulário em campos empilhados
-        JPanel campos = new JPanel();
-        campos.setLayout(new BoxLayout(campos, BoxLayout.Y_AXIS));
-        campos.setBackground(COR_CARD);
-        campos.add(criarTituloSecao("Cadastrar projeto"));
-        campos.add(Box.createVerticalStrut(14));
-        adicionarCampo(campos, "Nome:", campoNome);
-        adicionarCampo(campos, "Descrição:", scrollDescricao);
-        adicionarCampo(campos, "Categoria:", comboCategoria);
-        adicionarCampo(campos, "Status:", comboStatus);
-        adicionarCampo(campos, "Prazo (opcional):", campoPrazo);
+        ajustarLarguraTotal(campoNome, 36);
+        ajustarLarguraTotal(comboCategoria, 36);
+        ajustarLarguraTotal(comboStatus, 36);
+        ajustarLarguraTotal(campoPrazo, 36);
 
-        JPanel botoes = new JPanel(new GridLayout(2, 2, 8, 8));
-        botoes.setBackground(COR_CARD);
-        botoes.setAlignmentX(Component.LEFT_ALIGNMENT);
-        botoes.add(botaoCadastrar);
-        botoes.add(botaoAlterar);
-        botoes.add(botaoExcluir);
-        botoes.add(botaoLimpar);
-        botoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, botoes.getPreferredSize().height));
-        campos.add(botoes);
+        botaoCadastrar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        botaoCadastrar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
-        JPanel cardFormulario = criarCard();
-        cardFormulario.setLayout(new BorderLayout());
-        cardFormulario.setPreferredSize(new Dimension(400, 0));
-        cardFormulario.add(campos, BorderLayout.NORTH);
+        JPanel linhaAcoesSecundarias = new JPanel(new GridLayout(1, 3, 8, 0));
+        linhaAcoesSecundarias.setBackground(COR_CARD);
+        linhaAcoesSecundarias.setAlignmentX(Component.LEFT_ALIGNMENT);
+        linhaAcoesSecundarias.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        linhaAcoesSecundarias.add(botaoAlterar);
+        linhaAcoesSecundarias.add(botaoExcluir);
+        linhaAcoesSecundarias.add(botaoLimpar);
 
-        // Coluna direita: lista de projetos
-        JPanel cardTabela = criarCard();
-        cardTabela.setLayout(new BorderLayout(0, 10));
-        cardTabela.add(criarTituloSecao("Projetos cadastrados"), BorderLayout.NORTH);
-        cardTabela.add(scrollTabela, BorderLayout.CENTER);
+        formVertical.add(tituloForm);
+        formVertical.add(Box.createVerticalStrut(14));
+        formVertical.add(criarRotuloBloco("Nome:"));
+        formVertical.add(Box.createVerticalStrut(4));
+        formVertical.add(campoNome);
+        formVertical.add(Box.createVerticalStrut(10));
+        formVertical.add(criarRotuloBloco("Descrição:"));
+        formVertical.add(Box.createVerticalStrut(4));
+        formVertical.add(scrollDescricao);
+        formVertical.add(Box.createVerticalStrut(10));
+        formVertical.add(criarRotuloBloco("Categoria:"));
+        formVertical.add(Box.createVerticalStrut(4));
+        formVertical.add(comboCategoria);
+        formVertical.add(Box.createVerticalStrut(10));
+        formVertical.add(criarRotuloBloco("Status:"));
+        formVertical.add(Box.createVerticalStrut(4));
+        formVertical.add(comboStatus);
+        formVertical.add(Box.createVerticalStrut(10));
+        formVertical.add(criarRotuloBloco("Prazo (opcional):"));
+        formVertical.add(Box.createVerticalStrut(4));
+        formVertical.add(campoPrazo);
+        formVertical.add(Box.createVerticalStrut(14));
+        formVertical.add(botaoCadastrar);
+        formVertical.add(Box.createVerticalStrut(8));
+        formVertical.add(linhaAcoesSecundarias);
 
-        JPanel aba = new JPanel(new BorderLayout(20, 0));
-        aba.setBackground(COR_FUNDO);
-        aba.setBorder(new EmptyBorder(20, 24, 20, 24));
-        aba.add(cardFormulario, BorderLayout.WEST);
-        aba.add(cardTabela, BorderLayout.CENTER);
-        return aba;
+        JScrollPane scrollForm = new JScrollPane(formVertical);
+        scrollForm.setBorder(null);
+        scrollForm.getViewport().setBackground(COR_CARD);
+        scrollForm.getVerticalScrollBar().setUnitIncrement(14);
+
+        JPanel cardEsquerdo = criarCard();
+        cardEsquerdo.setLayout(new BorderLayout());
+        cardEsquerdo.add(scrollForm, BorderLayout.CENTER);
+
+        // Coluna direita: projetos cadastrados + busca por ID
+        JLabel tituloLista = new JLabel("Projetos cadastrados");
+        tituloLista.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        tituloLista.setForeground(COR_TEXTO);
+        tituloLista.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        campoBuscaId = new JTextField(12);
+        estilizarCampo(campoBuscaId);
+
+        JButton btnBuscarId = new JButton("Buscar");
+        JButton btnMostrarTodos = new JButton("Mostrar todos");
+        estilizarBotao(btnBuscarId, new Color(241, 243, 245), COR_TEXTO);
+        estilizarBotao(btnMostrarTodos, new Color(241, 243, 245), COR_TEXTO);
+
+        btnBuscarId.addActionListener(e -> filtrarProjetoPorId());
+        btnMostrarTodos.addActionListener(e -> {
+            campoBuscaId.setText("");
+            sorterProjetos.setRowFilter(null);
+        });
+
+        JPanel linhaBusca = criarLinha(4);
+        linhaBusca.add(criarRotulo("Buscar por ID:"));
+        linhaBusca.add(campoBuscaId);
+
+        JPanel linhaBotoesBusca = criarLinha(4);
+        linhaBotoesBusca.add(btnBuscarId);
+        linhaBotoesBusca.add(btnMostrarTodos);
+
+        JPanel topoDireito = new JPanel();
+        topoDireito.setLayout(new BoxLayout(topoDireito, BoxLayout.Y_AXIS));
+        topoDireito.setBackground(COR_CARD);
+        topoDireito.add(tituloLista);
+        topoDireito.add(Box.createVerticalStrut(10));
+        topoDireito.add(linhaBusca);
+        topoDireito.add(linhaBotoesBusca);
+        topoDireito.add(Box.createVerticalStrut(10));
+
+        JScrollPane scrollTabela = new JScrollPane(tabela);
+        estilizarTabela(tabela, scrollTabela);
+
+        JPanel cardDireito = criarCard();
+        cardDireito.setLayout(new BorderLayout(0, 8));
+        cardDireito.add(topoDireito, BorderLayout.NORTH);
+        cardDireito.add(scrollTabela, BorderLayout.CENTER);
+
+        JPanel grade = new JPanel(new GridLayout(1, 2, 18, 0));
+        grade.setBackground(COR_FUNDO);
+        grade.setBorder(new EmptyBorder(20, 24, 20, 24));
+        grade.add(cardEsquerdo);
+        grade.add(cardDireito);
+
+        JPanel pagina = new JPanel(new BorderLayout());
+        pagina.setBackground(COR_FUNDO);
+        pagina.add(topoBranco, BorderLayout.NORTH);
+        pagina.add(grade, BorderLayout.CENTER);
+        return pagina;
     }
 
-    /** Adiciona "rótulo acima, campo abaixo" ocupando toda a largura do painel. */
-    private void adicionarCampo(JPanel painel, String rotulo, JComponent componente) {
-        JLabel label = criarRotulo(rotulo);
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+    private void filtrarProjetoPorId() {
+        String idTexto = campoBuscaId.getText().trim();
+        if (idTexto.isEmpty()) {
+            sorterProjetos.setRowFilter(null);
+            return;
+        }
+        sorterProjetos.setRowFilter(new RowFilter<TableModel, Integer>() {
+            @Override
+            public boolean include(Entry<? extends TableModel, ? extends Integer> entry) {
+                return entry.getStringValue(COL_ID).trim().equals(idTexto);
+            }
+        });
+    }
 
-        componente.setAlignmentX(Component.LEFT_ALIGNMENT);
-        componente.setMaximumSize(new Dimension(Integer.MAX_VALUE, componente.getPreferredSize().height));
+    private JLabel criarRotuloBloco(String texto) {
+        JLabel lbl = criarRotulo(texto);
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return lbl;
+    }
 
-        painel.add(label);
-        painel.add(Box.createVerticalStrut(4));
-        painel.add(componente);
-        painel.add(Box.createVerticalStrut(12));
+    private void ajustarLarguraTotal(JComponent comp, int altura) {
+        comp.setAlignmentX(Component.LEFT_ALIGNMENT);
+        comp.setMaximumSize(new Dimension(Integer.MAX_VALUE, altura));
+        comp.setPreferredSize(new Dimension(0, altura));
     }
 
     // =====================================================================
     // ABA CATEGORIAS
     // =====================================================================
-
     private JPanel criarAbaCategorias() {
         categoriaAtiva = OPCOES_CATEGORIA[0];
         botoesCategoria = new LinkedHashMap<>();
         modeloCategorias = criarModeloTabela();
 
-        // Card com os botões de filtro
         JPanel painelBotoes = criarLinha(8);
         for (String opcao : OPCOES_CATEGORIA) {
             JButton btn = new JButton(opcao);
@@ -455,7 +908,6 @@ public class TelaPrincipal extends JFrame {
         cardFiltro.add(criarTituloSecao("Filtrar por Categoria"));
         cardFiltro.add(painelBotoes);
 
-        // Card com a tabela filtrada e contador
         JTable tabelaCategorias = new JTable(modeloCategorias);
         tabelaCategorias.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scrollCategorias = new JScrollPane(tabelaCategorias);
@@ -494,12 +946,12 @@ public class TelaPrincipal extends JFrame {
         for (int i = 0; i < totalGeral; i++) {
             String categoria = valorCelula(i, COL_CATEGORIA);
             if (categoriaAtiva.equals(OPCOES_CATEGORIA[0]) || categoria.equalsIgnoreCase(categoriaAtiva)) {
-                modeloCategorias.addRow(new Object[] {
-                        modelo.getValueAt(i, COL_ID),
-                        modelo.getValueAt(i, COL_NOME),
-                        modelo.getValueAt(i, COL_CATEGORIA),
-                        modelo.getValueAt(i, COL_STATUS),
-                        modelo.getValueAt(i, COL_PRAZO)
+                modeloCategorias.addRow(new Object[]{
+                    modelo.getValueAt(i, COL_ID),
+                    modelo.getValueAt(i, COL_NOME),
+                    modelo.getValueAt(i, COL_CATEGORIA),
+                    modelo.getValueAt(i, COL_STATUS),
+                    modelo.getValueAt(i, COL_PRAZO)
                 });
             }
         }
@@ -519,195 +971,9 @@ public class TelaPrincipal extends JFrame {
     }
 
     // =====================================================================
-    // ABA DASHBOARD
-    // =====================================================================
-
-    private JPanel criarAbaDashboard() {
-        // KPIs
-        lblKpiTotal = new JLabel("0");
-        lblKpiConcluidos = new JLabel("0");
-        lblKpiDesenvolvimento = new JLabel("0");
-        lblKpiPlanejados = new JLabel("0");
-
-        JPanel linhaKpis = new JPanel(new GridLayout(1, 4, 14, 0));
-        linhaKpis.setBackground(COR_FUNDO);
-        linhaKpis.setAlignmentX(Component.LEFT_ALIGNMENT);
-        linhaKpis.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
-        linhaKpis.add(criarCartaoKpi("Total de Projetos", lblKpiTotal, new Color(33, 150, 243)));
-        linhaKpis.add(criarCartaoKpi("Concluídos", lblKpiConcluidos, new Color(40, 167, 69)));
-        linhaKpis.add(criarCartaoKpi("Em Desenvolvimento", lblKpiDesenvolvimento, new Color(255, 152, 0)));
-        linhaKpis.add(criarCartaoKpi("Planejados", lblKpiPlanejados, new Color(123, 31, 162)));
-
-        // Linha do meio: distribuição + taxa de conclusão
-        JPanel linhaMeio = new JPanel(new GridLayout(1, 2, 14, 0));
-        linhaMeio.setBackground(COR_FUNDO);
-        linhaMeio.setAlignmentX(Component.LEFT_ALIGNMENT);
-        linhaMeio.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
-        linhaMeio.add(criarCardDistribuicao());
-        linhaMeio.add(criarCardTaxaConclusao());
-
-        // Últimos projetos
-        listaUltimosProjetos = new JPanel();
-        listaUltimosProjetos.setLayout(new BoxLayout(listaUltimosProjetos, BoxLayout.Y_AXIS));
-        listaUltimosProjetos.setBackground(COR_CARD);
-        listaUltimosProjetos.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JPanel cardUltimos = criarCard();
-        cardUltimos.setLayout(new BoxLayout(cardUltimos, BoxLayout.Y_AXIS));
-        cardUltimos.setAlignmentX(Component.LEFT_ALIGNMENT);
-        cardUltimos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 210));
-        cardUltimos.add(criarTituloSecao("Últimos Projetos Cadastrados"));
-        cardUltimos.add(Box.createVerticalStrut(10));
-        cardUltimos.add(listaUltimosProjetos);
-
-        JPanel conteudo = criarPainelAba();
-        conteudo.add(linhaKpis);
-        conteudo.add(Box.createVerticalStrut(14));
-        conteudo.add(linhaMeio);
-        conteudo.add(Box.createVerticalStrut(14));
-        conteudo.add(cardUltimos);
-
-        JScrollPane scroll = new JScrollPane(conteudo);
-        scroll.setBorder(null);
-        scroll.getViewport().setBackground(COR_FUNDO);
-
-        JPanel aba = new JPanel(new BorderLayout());
-        aba.setBackground(COR_FUNDO);
-        aba.add(scroll, BorderLayout.CENTER);
-        return aba;
-    }
-
-    private JPanel criarCardDistribuicao() {
-        JPanel card = criarCard();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.add(criarTituloSecao("Distribuição por Categoria"));
-        card.add(Box.createVerticalStrut(10));
-
-        lblDistribuicao = new LinkedHashMap<>();
-        for (String categoria : CATEGORIAS) {
-            JLabel lbl = new JLabel(categoria + ": 0");
-            lbl.setFont(FONTE_PADRAO);
-            lbl.setForeground(COR_TEXTO);
-            lblDistribuicao.put(categoria, lbl);
-            card.add(lbl);
-            card.add(Box.createVerticalStrut(4));
-        }
-        return card;
-    }
-
-    private JPanel criarCardTaxaConclusao() {
-        lblPercentualConclusao = new JLabel("0%");
-        lblPercentualConclusao.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        lblPercentualConclusao.setForeground(new Color(40, 167, 69));
-
-        lblDetalheTaxa = new JLabel("0 de 0 projetos concluídos");
-        lblDetalheTaxa.setFont(FONTE_PADRAO);
-        lblDetalheTaxa.setForeground(COR_MUTED);
-
-        barraConclusao = new JProgressBar(0, 100);
-        barraConclusao.setValue(0);
-        barraConclusao.setStringPainted(true);
-        barraConclusao.setForeground(new Color(40, 167, 69));
-        barraConclusao.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JPanel card = criarCard();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.add(criarTituloSecao("Taxa de Conclusão"));
-        card.add(Box.createVerticalStrut(10));
-        card.add(lblPercentualConclusao);
-        card.add(Box.createVerticalStrut(4));
-        card.add(lblDetalheTaxa);
-        card.add(Box.createVerticalStrut(12));
-        card.add(barraConclusao);
-        return card;
-    }
-
-    private JPanel criarCartaoKpi(String titulo, JLabel lblValor, Color corDestaque) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(COR_CARD);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 4, 1, 1, corDestaque),
-                new EmptyBorder(12, 14, 12, 14)));
-
-        lblValor.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        lblValor.setForeground(COR_TEXTO);
-
-        JLabel lblTitulo = new JLabel(titulo);
-        lblTitulo.setFont(FONTE_PADRAO);
-        lblTitulo.setForeground(COR_MUTED);
-
-        card.add(lblValor, BorderLayout.NORTH);
-        card.add(lblTitulo, BorderLayout.SOUTH);
-        return card;
-    }
-
-    private void atualizarDashboard() {
-        int total = modelo.getRowCount();
-        int concluido = 0;
-        int emDesenvolvimento = 0;
-        int planejado = 0;
-
-        for (int i = 0; i < total; i++) {
-            String status = valorCelula(i, COL_STATUS);
-            if ("Concluído".equalsIgnoreCase(status) || "Concluido".equalsIgnoreCase(status)) {
-                concluido++;
-            } else if ("Em Desenvolvimento".equalsIgnoreCase(status)) {
-                emDesenvolvimento++;
-            } else if ("Planejado".equalsIgnoreCase(status)) {
-                planejado++;
-            }
-        }
-
-        lblKpiTotal.setText(String.valueOf(total));
-        lblKpiConcluidos.setText(String.valueOf(concluido));
-        lblKpiDesenvolvimento.setText(String.valueOf(emDesenvolvimento));
-        lblKpiPlanejados.setText(String.valueOf(planejado));
-
-        for (Map.Entry<String, Integer> entrada : contarPorCategoria().entrySet()) {
-            lblDistribuicao.get(entrada.getKey()).setText(entrada.getKey() + ": " + entrada.getValue());
-        }
-
-        int percentual = total > 0 ? Math.round((concluido * 100f) / total) : 0;
-        lblPercentualConclusao.setText(percentual + "%");
-        lblDetalheTaxa.setText(concluido + " de " + total + " projetos concluídos");
-        barraConclusao.setValue(percentual);
-
-        atualizarListaUltimosProjetos(total);
-    }
-
-    private void atualizarListaUltimosProjetos(int total) {
-        listaUltimosProjetos.removeAll();
-
-        if (total == 0) {
-            JLabel vazio = new JLabel("Nenhum projeto cadastrado ainda.");
-            vazio.setFont(FONTE_PADRAO);
-            vazio.setForeground(COR_MUTED);
-            listaUltimosProjetos.add(vazio);
-        } else {
-            int inicio = Math.max(0, total - 5);
-            for (int i = total - 1; i >= inicio; i--) {
-                String prazo = valorCelula(i, COL_PRAZO);
-                String infoPrazo = prazo.isEmpty() ? "" : " • Prazo: " + prazo;
-
-                JLabel item = new JLabel("#" + valorCelula(i, COL_ID) + " • " + valorCelula(i, COL_NOME)
-                        + " (" + valorCelula(i, COL_CATEGORIA) + " — " + valorCelula(i, COL_STATUS) + ")" + infoPrazo);
-                item.setFont(FONTE_PADRAO);
-                item.setForeground(COR_TEXTO);
-                listaUltimosProjetos.add(item);
-                listaUltimosProjetos.add(Box.createVerticalStrut(6));
-            }
-        }
-
-        listaUltimosProjetos.revalidate();
-        listaUltimosProjetos.repaint();
-    }
-
-    // =====================================================================
     // ABA RELATÓRIOS
     // =====================================================================
-
     private JPanel criarAbaRelatorios() {
-        // Filtros
         campoBuscaRelatorio = new JTextField(20);
         estilizarCampo(campoBuscaRelatorio);
 
@@ -720,8 +986,8 @@ public class TelaPrincipal extends JFrame {
         JButton botaoExportarCsv = new JButton("Exportar CSV");
         JButton botaoImprimirPdf = new JButton("Imprimir / Salvar PDF");
         estilizarBotao(botaoLimparFiltros, new Color(108, 117, 125), Color.WHITE);
-        estilizarBotao(botaoExportarCsv, new Color(40, 167, 69), Color.WHITE);
-        estilizarBotao(botaoImprimirPdf, new Color(33, 150, 243), Color.WHITE);
+        estilizarBotao(botaoExportarCsv, COR_VERDE, Color.WHITE);
+        estilizarBotao(botaoImprimirPdf, COR_TOPO, Color.WHITE);
 
         JPanel linhaFiltros = criarLinha(6);
         linhaFiltros.add(criarRotulo("Buscar:"));
@@ -744,7 +1010,6 @@ public class TelaPrincipal extends JFrame {
         cardFiltros.add(linhaFiltros);
         cardFiltros.add(linhaAcoes);
 
-        // Listagem (usa o mesmo modelo da aba Projetos, com sorter próprio)
         sorterRelatorios = new TableRowSorter<>(modelo);
         tabelaRelatorio = new JTable(modelo);
         tabelaRelatorio.setRowSorter(sorterRelatorios);
@@ -766,7 +1031,6 @@ public class TelaPrincipal extends JFrame {
         cardListagem.add(cabecalhoListagem, BorderLayout.NORTH);
         cardListagem.add(scrollRelatorio, BorderLayout.CENTER);
 
-        // Eventos da aba
         campoBuscaRelatorio.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -906,12 +1170,12 @@ public class TelaPrincipal extends JFrame {
     // =====================================================================
     // OPERAÇÕES DO PROJETO (cadastrar / alterar / excluir / limpar)
     // =====================================================================
-
     public void cadastrar() {
         try {
             service.carregar();
             int id = service.gerarId();
             Projeto projeto = montarEValidarProjeto(id, LocalDate.now());
+            projeto.setUsuarioLogin(usuarioLogado);
 
             apiClient.cadastrarProjeto(projeto);
             JOptionPane.showMessageDialog(this, "Projeto Cadastrado: " + projeto.getNome());
@@ -935,10 +1199,10 @@ public class TelaPrincipal extends JFrame {
         try {
             int id = idDaLinha(linhaSelecionada);
 
-            // Preserva a data de criação original do projeto
             Projeto original = buscarNoCache(id);
             LocalDate dataCriacao = original != null ? original.getDataCriacao() : null;
             Projeto projetoAtualizado = montarEValidarProjeto(id, dataCriacao);
+            projetoAtualizado.setUsuarioLogin(usuarioLogado);
 
             int option = JOptionPane.showConfirmDialog(this,
                     "Um projeto será alterado.\nEstá certo disso?",
@@ -995,10 +1259,6 @@ public class TelaPrincipal extends JFrame {
         campoNome.requestFocus();
     }
 
-    /**
-     * Monta o Projeto a partir do formulário usando o construtor completo do
-     * model e valida pelo ProjetoService (mesmo fluxo da versão básica).
-     */
     private Projeto montarEValidarProjeto(int id, LocalDate dataCriacao) {
         String nome = campoNome.getText().trim();
         String descricao = campoDescricao.getText().trim();
@@ -1014,7 +1274,6 @@ public class TelaPrincipal extends JFrame {
     // =====================================================================
     // DADOS E TABELA (carga via API, atualização e seleção)
     // =====================================================================
-
     public void carregarTabela() {
         new SwingWorker<List<Projeto>, Void>() {
             @Override
@@ -1030,7 +1289,6 @@ public class TelaPrincipal extends JFrame {
                     atualizarTabela(projetosCache);
                 } catch (Exception e) {
                     LogManager.error("DESKTOP_CARGA", e.getMessage());
-                    // Evita repetir o aviso a cada atualização automática
                     if (!erroCargaExibido) {
                         erroCargaExibido = true;
                         JOptionPane.showMessageDialog(TelaPrincipal.this, "Erro ao carregar: " + e.getMessage(),
@@ -1048,17 +1306,16 @@ public class TelaPrincipal extends JFrame {
             idSelecionado = idDaLinha(linhaView);
         }
 
-        // A flag impede que a re-seleção sobrescreva o que o usuário está digitando
         atualizandoTabela = true;
         try {
             modelo.setRowCount(0);
             for (Projeto projeto : projetos) {
-                modelo.addRow(new Object[] {
-                        projeto.getId(),
-                        projeto.getNome(),
-                        projeto.getCategoria(),
-                        projeto.getStatus(),
-                        formatarPrazo(projeto)
+                modelo.addRow(new Object[]{
+                    projeto.getId(),
+                    projeto.getNome(),
+                    projeto.getCategoria(),
+                    projeto.getStatus(),
+                    formatarPrazo(projeto)
                 });
             }
 
@@ -1080,7 +1337,6 @@ public class TelaPrincipal extends JFrame {
         atualizarAbasDerivadas();
     }
 
-    /** Recalcula as abas que dependem do modelo da tabela de projetos. */
     private void atualizarAbasDerivadas() {
         atualizarCategorias();
         atualizarDashboard();
@@ -1148,7 +1404,6 @@ public class TelaPrincipal extends JFrame {
     // =====================================================================
     // FÁBRICA DE COMPONENTES E ESTILO
     // =====================================================================
-
     private static String[] comOpcaoTodos(String rotulo, String[] opcoes) {
         String[] resultado = new String[opcoes.length + 1];
         resultado[0] = rotulo;
@@ -1173,7 +1428,7 @@ public class TelaPrincipal extends JFrame {
         JPanel painel = new JPanel();
         painel.setLayout(new BoxLayout(painel, BoxLayout.Y_AXIS));
         painel.setBackground(COR_FUNDO);
-        painel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        painel.setBorder(new EmptyBorder(18, 22, 18, 22));
         return painel;
     }
 
@@ -1182,7 +1437,7 @@ public class TelaPrincipal extends JFrame {
         card.setBackground(COR_CARD);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(COR_BORDA, 1, true),
-                new EmptyBorder(18, 20, 18, 20)));
+                new EmptyBorder(16, 18, 16, 18)));
         return card;
     }
 
@@ -1256,26 +1511,366 @@ public class TelaPrincipal extends JFrame {
     }
 
     // =====================================================================
-    // PONTO DE ENTRADA
+    // GRÁFICOS COM GRAPHICS2D (IDÊNTICOS AO CHART.JS DA VERSÃO WEB)
     // =====================================================================
+    private static class PainelGraficoStatus extends JPanel {
 
-    public static void main(String[] args) throws Exception {
-        try {
-            Api.iniciar(System.getProperty("user.name"));
-        } catch (Exception ex) {
-            System.out.println("Aviso ao iniciar API: " + ex.getMessage());
+        private int concluido;
+        private int emDesenvolvimento;
+        private int planejado;
+        private int cancelado;
+
+        PainelGraficoStatus() {
+            setOpaque(false);
         }
 
-        TelaPrincipal tela = new TelaPrincipal();
-        tela.setVisible(true);
+        void setDados(int concluido, int emDesenvolvimento, int planejado, int cancelado) {
+            this.concluido = concluido;
+            this.emDesenvolvimento = emDesenvolvimento;
+            this.planejado = planejado;
+            this.cancelado = cancelado;
+            repaint();
+        }
 
-        // Atualização automática a cada 5 segundos (thread daemon não impede o
-        // encerramento)
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "atualizacao-tabela");
-            t.setDaemon(true);
-            return t;
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int[] valores = {concluido, emDesenvolvimento, planejado, cancelado};
+            String[] rotulos = {"Concluído", "Em Desenvolvimento", "Planejado", "Cancelado"};
+            Color[] cores = {COR_VERDE, COR_LARANJA, COR_AZUL, COR_VERMELHO};
+
+            int total = concluido + emDesenvolvimento + planejado + cancelado;
+            int w = getWidth();
+            int h = getHeight();
+            int areaLegenda = 44;
+            int diametro = Math.max(70, Math.min(w - 40, h - areaLegenda - 12));
+            int x = (w - diametro) / 2;
+            int y = 4;
+
+            if (total == 0) {
+                g2.setColor(new Color(236, 239, 241));
+                g2.fillOval(x, y, diametro, diametro);
+            } else {
+                double anguloAtual = 90.0;
+                for (int i = 0; i < valores.length; i++) {
+                    if (valores[i] <= 0) {
+                        continue;
+                    }
+                    double arco = (valores[i] / (double) total) * 360.0;
+                    g2.setColor(cores[i]);
+                    g2.fillArc(x, y, diametro, diametro, (int) Math.round(anguloAtual), (int) Math.round(-arco));
+                    anguloAtual -= arco;
+                }
+                g2.setColor(Color.WHITE);
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawOval(x, y, diametro, diametro);
+            }
+
+            desenharLegenda(g2, rotulos, cores, y + diametro + 14, w);
+            g2.dispose();
+        }
+
+        private void desenharLegenda(Graphics2D g2, String[] rotulos, Color[] cores, int startY, int largura) {
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            int[] larguras = new int[rotulos.length];
+            int linha1Largura = 0;
+            for (int i = 0; i < 3; i++) {
+                larguras[i] = 22 + g2.getFontMetrics().stringWidth(rotulos[i]) + 12;
+                linha1Largura += larguras[i];
+            }
+
+            int x1 = Math.max(8, (largura - linha1Largura) / 2);
+            for (int i = 0; i < 3; i++) {
+                g2.setColor(cores[i]);
+                g2.fillRect(x1, startY - 8, 18, 9);
+                g2.setColor(COR_MUTED);
+                g2.drawString(rotulos[i], x1 + 22, startY);
+                x1 += larguras[i];
+            }
+
+            int largura4 = 22 + g2.getFontMetrics().stringWidth(rotulos[3]);
+            int x2 = Math.max(8, (largura - largura4) / 2);
+            g2.setColor(cores[3]);
+            g2.fillRect(x2, startY + 9, 18, 9);
+            g2.setColor(COR_MUTED);
+            g2.drawString(rotulos[3], x2 + 22, startY + 17);
+        }
+    }
+
+    private static class PainelGraficoCategoria extends JPanel {
+
+        private final String[] categorias = {"Web", "Software", "Mobile", "Desktop"};
+        private int[] valores = new int[4];
+
+        PainelGraficoCategoria() {
+            setOpaque(false);
+        }
+
+        void setDados(int[] valores) {
+            this.valores = valores != null ? valores : new int[4];
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int max = 1;
+            for (int v : valores) {
+                max = Math.max(max, v);
+            }
+
+            int padEsq = 26;
+            int padDir = 12;
+            int topoY = 12;
+            int baseY = Math.max(50, getHeight() - 24);
+            int alturaArea = Math.max(20, baseY - topoY);
+            int larguraArea = Math.max(80, getWidth() - padEsq - padDir);
+
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            int passos = Math.min(max, 4);
+            for (int i = 0; i <= passos; i++) {
+                int y = baseY - (int) ((i / (double) passos) * alturaArea);
+                int valorTick = (int) Math.round((i / (double) passos) * max);
+                g2.setColor(new Color(230, 234, 238));
+                g2.drawLine(padEsq, y, padEsq + larguraArea, y);
+                g2.setColor(COR_MUTED);
+                g2.drawString(String.valueOf(valorTick), 6, y + 4);
+            }
+
+            int larguraSlot = larguraArea / categorias.length;
+            int larguraBarra = Math.max(24, Math.min(58, (int) (larguraSlot * 0.65)));
+
+            for (int i = 0; i < categorias.length; i++) {
+                int centroX = padEsq + i * larguraSlot + larguraSlot / 2;
+                int x = centroX - larguraBarra / 2;
+                int h = (int) ((valores[i] / (double) max) * alturaArea);
+
+                if (valores[i] > 0) {
+                    g2.setColor(COR_SIDEBAR);
+                    g2.fillRect(x, baseY - h, larguraBarra, Math.max(h, 4));
+                }
+
+                int textoW = g2.getFontMetrics().stringWidth(categorias[i]);
+                g2.setColor(COR_MUTED);
+                g2.drawString(categorias[i], centroX - textoW / 2, baseY + 15);
+            }
+
+            g2.dispose();
+        }
+    }
+
+    private static class PainelGraficoMensal extends JPanel {
+
+        private final String[] meses = {"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"};
+        private int[] porMes = new int[12];
+
+        PainelGraficoMensal() {
+            setOpaque(false);
+        }
+
+        void setDados(int[] porMes) {
+            this.porMes = porMes != null ? porMes : new int[12];
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int max = 1;
+            for (int v : porMes) {
+                max = Math.max(max, v);
+            }
+
+            int padEsq = 26;
+            int padDir = 14;
+            int topoY = 12;
+            int baseY = Math.max(50, getHeight() - 40);
+            int alturaArea = Math.max(20, baseY - topoY);
+            int larguraArea = Math.max(100, getWidth() - padEsq - padDir);
+
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+            int passos = Math.min(max, 4);
+            for (int i = 0; i <= passos; i++) {
+                int y = baseY - (int) ((i / (double) passos) * alturaArea);
+                int valorTick = (int) Math.round((i / (double) passos) * max);
+                g2.setColor(new Color(230, 234, 238));
+                g2.drawLine(padEsq, y, padEsq + larguraArea, y);
+                g2.setColor(COR_MUTED);
+                g2.drawString(String.valueOf(valorTick), 6, y + 4);
+            }
+
+            int[] xs = new int[12];
+            int[] ys = new int[12];
+            for (int i = 0; i < 12; i++) {
+                xs[i] = padEsq + (int) ((i / 11.0) * larguraArea);
+                ys[i] = baseY - (int) ((porMes[i] / (double) max) * alturaArea);
+                g2.setColor(new Color(238, 241, 244));
+                g2.drawLine(xs[i], topoY, xs[i], baseY);
+            }
+
+            // Área preenchida sob a curva
+            java.awt.Polygon area = new java.awt.Polygon();
+            area.addPoint(xs[0], baseY);
+            for (int i = 0; i < 12; i++) {
+                area.addPoint(xs[i], ys[i]);
+            }
+            area.addPoint(xs[11], baseY);
+            g2.setColor(new Color(25, 118, 210, 38));
+            g2.fillPolygon(area);
+
+            // Linha azul
+            g2.setColor(COR_AZUL);
+            g2.setStroke(new BasicStroke(2.2f));
+            for (int i = 0; i < 11; i++) {
+                g2.drawLine(xs[i], ys[i], xs[i + 1], ys[i + 1]);
+            }
+
+            // Pontos vazados + rótulos dos meses
+            for (int i = 0; i < 12; i++) {
+                g2.setColor(Color.WHITE);
+                g2.fillOval(xs[i] - 3, ys[i] - 3, 6, 6);
+                g2.setColor(COR_AZUL);
+                g2.drawOval(xs[i] - 3, ys[i] - 3, 6, 6);
+
+                int mw = g2.getFontMetrics().stringWidth(meses[i]);
+                g2.setColor(COR_MUTED);
+                g2.drawString(meses[i], xs[i] - mw / 2, baseY + 14);
+            }
+
+            // Legenda inferior: Projetos Criados
+            String legenda = "Projetos Criados";
+            int lw = 26 + g2.getFontMetrics().stringWidth(legenda);
+            int lx = (getWidth() - lw) / 2;
+            int ly = baseY + 31;
+            g2.setColor(new Color(25, 118, 210, 38));
+            g2.fillRect(lx, ly - 8, 20, 9);
+            g2.setColor(COR_AZUL);
+            g2.drawRect(lx, ly - 8, 20, 9);
+            g2.setColor(COR_MUTED);
+            g2.drawString(legenda, lx + 25, ly);
+
+            g2.dispose();
+        }
+    }
+
+    private static class PainelGraficoPrazos extends JPanel {
+
+        private int noPrazo;
+        private int atrasados;
+
+        PainelGraficoPrazos() {
+            setOpaque(false);
+        }
+
+        void setDados(int noPrazo, int atrasados) {
+            this.noPrazo = noPrazo;
+            this.atrasados = atrasados;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int total = noPrazo + atrasados;
+            int w = getWidth();
+            int h = getHeight();
+            int diametro = Math.max(70, Math.min(w - 40, h - 32));
+            int x = (w - diametro) / 2;
+            int y = 2;
+
+            if (total == 0) {
+                g2.setColor(new Color(236, 239, 241));
+                g2.fillOval(x, y, diametro, diametro);
+            } else {
+                double arcoNoPrazo = (noPrazo / (double) total) * 360.0;
+                double arcoAtrasados = 360.0 - arcoNoPrazo;
+
+                if (noPrazo > 0) {
+                    g2.setColor(COR_VERDE);
+                    g2.fillArc(x, y, diametro, diametro, 90, (int) Math.round(-arcoNoPrazo));
+                }
+                if (atrasados > 0) {
+                    g2.setColor(COR_VERMELHO);
+                    g2.fillArc(x, y, diametro, diametro, (int) Math.round(90 - arcoNoPrazo), (int) Math.round(-arcoAtrasados));
+                }
+            }
+
+            // Miolo branco para formar o gráfico de rosca (doughnut)
+            int furo = (int) (diametro * 0.52);
+            int fx = x + (diametro - furo) / 2;
+            int fy = y + (diametro - furo) / 2;
+            g2.setColor(Color.WHITE);
+            g2.fillOval(fx, fy, furo, furo);
+
+            // Legenda: No prazo / Atrasados
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+            int ly = y + diametro + 15;
+            int l1 = 22 + g2.getFontMetrics().stringWidth("No prazo") + 14;
+            int l2 = 22 + g2.getFontMetrics().stringWidth("Atrasados");
+            int lx = Math.max(8, (w - (l1 + l2)) / 2);
+
+            g2.setColor(COR_VERDE);
+            g2.fillRect(lx, ly - 8, 18, 9);
+            g2.setColor(COR_MUTED);
+            g2.drawString("No prazo", lx + 22, ly);
+
+            g2.setColor(COR_VERMELHO);
+            g2.fillRect(lx + l1, ly - 8, 18, 9);
+            g2.setColor(COR_MUTED);
+            g2.drawString("Atrasados", lx + l1 + 22, ly);
+
+            g2.dispose();
+        }
+    }
+
+    // =====================================================================
+    // PONTO DE ENTRADA
+    // =====================================================================
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            TelaLogin telaLogin = new TelaLogin(null);
+            telaLogin.setVisible(true);
+
+            if (!telaLogin.isAutenticado()) {
+                System.exit(0);
+                return;
+            }
+
+            String usuario = telaLogin.getUsuarioLogado();
+            String nome = telaLogin.getNomeUsuarioLogado();
+            String perfil = telaLogin.getPerfilUsuarioLogado();
+
+            try {
+                Api.iniciar(usuario);
+            } catch (Exception ex) {
+                System.out.println("Aviso ao iniciar API: " + ex.getMessage());
+            }
+
+            try {
+                TelaPrincipal tela = new TelaPrincipal(usuario, nome, perfil);
+                tela.setVisible(true);
+
+                ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                    Thread t = new Thread(r, "atualizacao-tabela");
+                    t.setDaemon(true);
+                    return t;
+                });
+                scheduler.scheduleAtFixedRate(tela::carregarTabela, 5, 5, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
-        scheduler.scheduleAtFixedRate(tela::carregarTabela, 5, 5, TimeUnit.SECONDS);
     }
 }
