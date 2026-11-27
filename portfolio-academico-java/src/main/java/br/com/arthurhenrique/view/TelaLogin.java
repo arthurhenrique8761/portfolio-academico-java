@@ -84,7 +84,7 @@ public class TelaLogin extends JDialog {
             LogManager.error("SWING_AUTH_INIT", e.getMessage());
         }
 
-        setSize(430, 470);
+        setSize(430, 520);
         setLocationRelativeTo(parent);
         setResizable(false);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
